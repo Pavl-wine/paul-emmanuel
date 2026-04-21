@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paul Emmanuel — Gestion des vins</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f8f5f0;color:#1a0a08;min-height:100vh;}
+
+nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52px;border-bottom:2px solid #c9a84c;position:sticky;top:0;z-index:999;gap:0;}
+.brand{color:#c9a84c;font-size:16px;font-weight:700;letter-spacing:.04em;margin-right:24px;white-space:nowrap;flex-shrink:0;}
+.tabs{display:flex;flex:1;}
+.tab{padding:0 18px;height:52px;display:flex;align-items:center;font-size:13px;font-weight:500;color:rgba(255,255,255,0.5);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;user-select:none;transition:color 0.15s;}
+.tab:hover{color:rgba(255,255,255,0.85);}
+.tab.active{color:#c9a84c;border-bottom-color:#c9a84c;}
+.role-btns{margin-left:auto;display:flex;gap:8px;flex-shrink:0;}
+.rbtn{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid;background:transparent;font-family:inherit;transition:all 0.15s;}
+.rbtn.patron{border-color:#c9a84c;color:#c9a84c;}
+.rbtn.employe{border-color:rgba(255,255,255,0.4);color:rgba(255,255,255,0.55);}
+.rbtn.on{background:#c9a84c!important;color:#3d1020!important;border-color:#c9a84c!important;}
+.rbtn.employe.on{background:rgba(255,255,255,0.9)!important;color:#3d1020!important;border-color:white!important;}
+
+.page{display:none;padding:20px;max-width:1300px;margin:0 auto;}
+.page.on{display:block;}
+
+/* Loading */
+.loading{text-align:center;padding:60px 20px;color:#8a7060;}
+.spinner{width:32px;height:32px;border:3px solid #e0d8d0;border-top-color:#6b2737;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.sync-bar{background:#3d1020;color:#e8c96a;font-size:11px;padding:4px 20px;display:flex;align-items:center;gap:8px;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#e8c96a;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;}
+.kpi{background:white;border:1px solid #e0d8d0;border-radius:10px;padding:14px 16px;}
+.kpi-label{font-size:10px;font-weight:600;color:#8a7060;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+.kpi-value{font-size:28px;font-weight:300;color:#1a0a08;line-height:1;}
+.kpi-sub{font-size:11px;color:#8a7060;margin-top:3px;}
+
+/* Filters */
+.fbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.fi{padding:7px 11px;border:1px solid #ddd5c8;border-radius:7px;font-size:13px;background:white;color:#1a0a08;font-family:inherit;outline:none;}
+.fi:focus{border-color:#6b2737;}
+select.fi{cursor:pointer;}
+.fi-wide{width:230px;}
+.fcount{font-size:12px;color:#8a7060;}
+
+/* Sub tabs */
+.stabs{display:flex;border-bottom:1px solid #ddd5c8;margin-bottom:14px;}
+.stab{padding:7px 16px;font-size:13px;font-weight:500;color:#8a7060;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s;user-select:none;}
+.stab:hover{color:#3d1020;}
+.stab.on{color:#3d1020;border-bottom-color:#3d1020;}
+
+/* Table */
+.tbox{background:white;border:1px solid #e0d8d0;border-radius:10px;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px;}
+thead tr{background:#3d1020;}
+thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);letter-spacing:.05em;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f0ebe3;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#faf7f0;}
+tbody td{padding:8px 12px;vertical-align:middle;}
+.mono{font-family:monospace;font-size:11px;background:#f0ebe3;border-radius:3px;padding:2px 6px;color:#5a4030;}
+.bdg{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+.b-actif{background:#eaf3de;color:#27500a;}
+.b-cmd{background:#e6f1fb;color:#0c447c;}
+.b-alerte{background:#fcebeb;color:#791f1f;}
+.b-off{background:#f1efe8;color:#5f5e5a;}
+.b-ok{background:#eaf3de;color:#27500a;}
+.b-cours{background:#faeeda;color:#633806;}
+.b-lancer{background:#e6f1fb;color:#0c447c;}
+.s-neg{color:#791f1f;font-weight:700;}
+.s-low{color:#854f0b;font-weight:600;}
+.s-ok{color:#27500a;font-weight:500;}
+.s-zero{color:#8a7060;}
+.nodata{text-align:center;padding:40px;color:#8a7060;font-size:14px;}
+td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;}td.wine{font-weight:600;color:#6b2737;}
+
+/* Warehouse */
+.wh{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.pal{background:white;border:1px solid #e0d8d0;border-radius:10px;padding:12px 14px;}
+.pal-hdr{font-size:11px;font-weight:700;color:#5a4030;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.pal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.pal-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid #f0ebe3;font-size:12px;gap:8px;}
+.pal-row:last-child{border-bottom:none;}
+.pal-wine{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pal-qty{font-weight:700;flex-shrink:0;}
+
+/* Dispatch */
+.dp-hdr{background:#3d1020;color:white;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.dp-hdr h2{font-size:18px;font-weight:700;color:#e8c96a;margin-bottom:2px;}
+.dp-hdr p{font-size:12px;color:rgba(255,255,255,0.55);}
+.dp-prog-n{font-size:26px;font-weight:300;color:#e8c96a;line-height:1;}
+.dp-prog-l{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;text-align:right;}
+
+.pick-card{background:white;border:1px solid #e0d8d0;border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.pick-card-hdr{background:#f8f5f0;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e0d8d0;}
+.pick-info{font-size:12px;color:#8a7060;padding:8px 16px 10px;border-bottom:1px solid #f0ebe3;}
+.prog-bar{height:4px;background:#f0ebe3;margin:0 16px 12px;border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:#3b6d11;border-radius:2px;transition:width 0.3s;}
+.pick-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f0ebe3;cursor:pointer;transition:background 0.12s;user-select:none;}
+.pick-row:last-of-type{border-bottom:none;}
+.pick-row:hover{background:#faf7f0;}
+.pick-row.done{background:#eaf3de;}
+.pick-row.done .pick-name{text-decoration:line-through;color:#8a7060;}
+.chk{width:22px;height:22px;border:2px solid #ddd5c8;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all 0.15s;color:white;}
+.pick-row.done .chk{background:#3b6d11;border-color:#3b6d11;}
+.loc-tag{font-size:11px;font-weight:700;background:#3d1020;color:#e8c96a;border-radius:4px;padding:3px 8px;min-width:48px;text-align:center;flex-shrink:0;}
+.pick-name{flex:1;font-size:13px;font-weight:500;}
+.pick-sub{font-size:11px;color:#8a7060;margin-top:1px;}
+.pick-qty{font-size:13px;font-weight:700;color:#6b2737;min-width:36px;text-align:right;flex-shrink:0;}
+
+/* Buttons */
+.vbtn{display:block;width:calc(100% - 32px);margin:0 16px 16px;padding:12px;background:#6b2737;color:#e8c96a;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s;text-align:center;}
+.vbtn:hover:not(:disabled){background:#8b3a4a;}
+.vbtn:disabled{background:#c8bfb5;color:#8a7060;cursor:not-allowed;}
+.vbtn.validated{background:#3b6d11;color:white;cursor:default;}
+.vbtn.photo-btn{background:#1d5c8a;margin-top:0;margin-bottom:8px;}
+.vbtn.photo-btn:hover:not(:disabled){background:#2471a3;}
+
+/* Photo validation */
+.photo-zone{margin:0 16px 8px;border:2px dashed #ddd5c8;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:border-color 0.15s;position:relative;}
+.photo-zone:hover{border-color:#6b2737;}
+.photo-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.photo-zone p{font-size:13px;color:#8a7060;margin-bottom:4px;}
+.photo-zone small{font-size:11px;color:#aaa;}
+.photo-preview{max-width:100%;border-radius:6px;margin-top:10px;display:none;}
+.ai-result{margin:0 16px 12px;padding:12px 14px;border-radius:8px;font-size:13px;}
+.ai-result.ok{background:#eaf3de;border:1px solid #97c459;color:#27500a;}
+.ai-result.error{background:#fcebeb;border:1px solid #f09595;color:#791f1f;}
+.ai-result.checking{background:#e6f1fb;border:1px solid #85b7eb;color:#0c447c;}
+.ai-result .ai-icon{font-size:18px;margin-bottom:6px;}
+.ai-result .ai-title{font-weight:600;margin-bottom:4px;}
+.ai-result .ai-details{font-size:12px;line-height:1.5;}
+
+.empty-state{text-align:center;padding:60px 20px;color:#8a7060;}
+.empty-state p{font-size:16px;margin-bottom:8px;}
+.empty-state small{font-size:13px;}
+
+/* Refresh button */
+.refresh-btn{padding:5px 12px;border:1px solid #ddd5c8;border-radius:6px;font-size:12px;background:white;color:#5a4030;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.refresh-btn:hover{border-color:#6b2737;color:#6b2737;}
+</style>
+</head>
+<body>
+
+<!-- Sync bar -->
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-status">Connexion à Google Sheets...</span>
+  <button class="refresh-btn" onclick="loadAll()" style="margin-left:auto">Actualiser</button>
+</div>
+
+<nav>
+  <div class="brand">Paul Emmanuel</div>
+  <div class="tabs">
+    <div class="tab active" id="tab-stocks" onclick="goTo('stocks')">Stocks</div>
+    <div class="tab" id="tab-commandes" onclick="goTo('commandes')">Commandes</div>
+    <div class="tab" id="tab-dispatch" onclick="goTo('dispatch')">Dispatch</div>
+  </div>
+  <div class="role-btns">
+    <button class="rbtn patron on" id="rbtn-patron" onclick="setRole('patron')">Patron</button>
+    <button class="rbtn employe" id="rbtn-employe" onclick="setRole('employe')">Employée</button>
+  </div>
+</nav>
+
+<!-- STOCKS -->
+<div class="page on" id="page-stocks">
+  <div id="stocks-loading" class="loading"><div class="spinner"></div>Chargement des stocks...</div>
+  <div id="stocks-content" style="display:none">
+    <div class="kpis" id="kpi-stocks"></div>
+    <div class="stabs">
+      <div class="stab on" onclick="switchView('liste',this)">Liste</div>
+      <div class="stab" onclick="switchView('entrepot',this)">Entrepôt</div>
+    </div>
+    <div id="sv-liste">
+      <div class="fbar">
+        <input class="fi fi-wide" type="search" id="s-q" placeholder="Cuvée, producteur, référence..." oninput="renderStocks()">
+        <select class="fi" id="s-pays" onchange="renderStocks()"><option value="">Tous les pays</option></select>
+        <select class="fi" id="s-couleur" onchange="renderStocks()">
+          <option value="">Toutes couleurs</option>
+          <option>Rouge</option><option>Blanc</option><option>Rosé</option><option>Porto</option>
+        </select>
+        <select class="fi" id="s-statut" onchange="renderStocks()">
+          <option value="">Tous statuts</option><option>Actif</option><option>Commandé</option><option>Alerte stock</option>
+        </select>
+        <span class="fcount" id="s-cnt"></span>
+      </div>
+      <div class="tbox"><table>
+        <thead><tr><th>Référence</th><th>Producteur</th><th>Cuvée</th><th>Pays</th><th>Couleur</th><th>Millésime</th><th>Emplacement</th><th>Initial</th><th>Sorti</th><th>Stock réel</th><th>Statut</th></tr></thead>
+        <tbody id="s-tbody"></tbody>
+      </table></div>
+    </div>
+    <div id="sv-entrepot" style="display:none"><div class="wh" id="wh-grid"></div></div>
+  </div>
+</div>
+
+<!-- COMMANDES -->
+<div class="page" id="page-commandes">
+  <div id="cmds-loading" class="loading"><div class="spinner"></div>Chargement des commandes...</div>
+  <div id="cmds-content" style="display:none">
+    <div class="kpis" id="kpi-cmds"></div>
+    <div class="fbar">
+      <input class="fi fi-wide" type="search" id="c-q" placeholder="Client, cuvée, commande..." oninput="renderCmds()">
+      <select class="fi" id="c-statut" onchange="renderCmds()">
+        <option value="">Tous statuts</option><option>Terminé</option><option>En cours</option><option>À lancer</option>
+      </select>
+      <select class="fi" id="c-client" onchange="renderCmds()"><option value="">Tous les clients</option></select>
+      <span class="fcount" id="c-cnt"></span>
+    </div>
+    <div class="tbox"><table>
+      <thead><tr><th>Commande</th><th>Client</th><th>Référence</th><th>Cuvée</th><th>Pays</th><th>Millésime</th><th>Emplacement</th><th>Qté</th><th>Batch</th><th>Statut</th></tr></thead>
+      <tbody id="c-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- DISPATCH -->
+<div class="page" id="page-dispatch">
+  <div class="dp-hdr">
+    <div>
+      <h2 id="dp-title">Ordre de prélèvement</h2>
+      <p id="dp-sub">Sélectionnez une commande ci-dessous</p>
+    </div>
+    <div id="dp-prog" style="display:none;text-align:right">
+      <div class="dp-prog-n" id="dp-prog-n">0/0</div>
+      <div class="dp-prog-l">bouteilles prélevées</div>
+    </div>
+  </div>
+  <div class="fbar">
+    <select class="fi" id="dp-cmd" onchange="loadDispatch()" style="min-width:240px"><option value="">-- Choisir une commande --</option></select>
+    <select class="fi" id="dp-cli" onchange="filterDpClient()" style="min-width:200px"><option value="">Tous les clients</option></select>
+  </div>
+  <div id="dp-content"><div class="empty-state"><p>Aucune commande sélectionnée</p><small>Choisissez dans le menu ci-dessus</small></div></div>
+</div>
+
+<script>
+var SHEET_ID = '1znLTLaJgzwUEo-mymIeo708_n3ri8sNiTt7TJevFxKE';
+var STOCKS = [], CMDS = [];
+var role = 'patron';
+var picks = {}, validated = {}, photoData = {};
+var lastSync = null;
+
+/* ── Google Sheets fetch ── */
+function fetchSheet(sheetName, callback) {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetName);
+  var script = document.createElement('script');
+  var cbName = 'cb_' + sheetName.replace(/\W/g,'_') + '_' + Date.now();
+  window[cbName] = function(data) {
+    document.body.removeChild(script);
+    delete window[cbName];
+    callback(parseGviz(data));
+  };
+  script.src = url + '&tqx=out:json&responseHandler=' + cbName;
+  script.onerror = function() {
+    document.body.removeChild(script);
+    delete window[cbName];
+    callback(null);
+  };
+  document.body.appendChild(script);
+}
+
+function parseGviz(data) {
+  if (!data || !data.table) return [];
+  var cols = data.table.cols.map(function(c){ return c.label; });
+  var rows = [];
+  data.table.rows.forEach(function(r) {
+    if (!r.c) return;
+    var obj = {};
+    var hasData = false;
+    r.c.forEach(function(cell, i) {
+      var val = cell ? (cell.v !== null && cell.v !== undefined ? cell.v : '') : '';
+      if (typeof val === 'object' && val !== null) val = '';
+      obj[cols[i]] = val;
+      if (val !== '') hasData = true;
+    });
+    if (hasData) rows.push(obj);
+  });
+  return rows;
+}
+
+function setSyncStatus(msg, ok) {
+  document.getElementById('sync-status').textContent = msg;
+  var dot = document.getElementById('sync-dot');
+  dot.style.background = ok === false ? '#f09595' : ok === true ? '#97c459' : '#e8c96a';
+}
+
+function loadAll() {
+  setSyncStatus('Synchronisation en cours...', null);
+  var loaded = 0;
+  function done() {
+    loaded++;
+    if (loaded === 2) {
+      lastSync = new Date();
+      setSyncStatus('Synchronisé — ' + lastSync.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}), true);
+      initStocks();
+      initCmds();
+    }
+  }
+  fetchSheet('Catalogue & Stocks', function(rows) {
+    if (!rows) {
+      setSyncStatus('Mode hors-ligne — données embarquées du dernier import', false);
+      return;
+    }
+    // Find header row
+    var hdrIdx = -1;
+    for (var i = 0; i < Math.min(rows.length, 5); i++) {
+      if (rows[i]['Référence'] !== undefined || rows[i][''] === 'Référence') { hdrIdx = i; break; }
+    }
+    // Filter real stock rows
+    STOCKS = rows.filter(function(r) {
+      var ref = r['Référence'] || r[''] || '';
+      return typeof ref === 'string' && ref.match(/^PE-/);
+    });
+    // Compute Stock Réel
+    STOCKS.forEach(function(s) {
+      var ini = parseFloat(s['Stock Initial']) || 0;
+      var out = parseFloat(s['Stock Sorti']) || 0;
+      s['_stockReel'] = ini - out;
+    });
+    done();
+  });
+  fetchSheet('Commandes', function(rows) {
+    if (!rows) { done(); return; }
+    CMDS = rows.filter(function(r) {
+      var id = r['N° Commande'] || r['Commande'] || '';
+      return typeof id === 'string' && id.match(/^CMD-/);
+    });
+    done();
+  });
+}
+
+/* ── Nav ── */
+function goTo(p) {
+  document.querySelectorAll('.page').forEach(function(x){ x.classList.remove('on'); });
+  document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+  document.getElementById('page-'+p).classList.add('on');
+  document.getElementById('tab-'+p).classList.add('active');
+}
+
+function setRole(r) {
+  role = r;
+  document.getElementById('rbtn-patron').classList.toggle('on', r==='patron');
+  document.getElementById('rbtn-employe').classList.toggle('on', r==='employe');
+  if (r==='patron') {
+    document.getElementById('tab-dispatch').textContent = 'Dispatch';
+    document.getElementById('dp-title').textContent = 'Ordre de prélèvement';
+    document.getElementById('dp-sub').textContent = 'Sélectionnez une commande à dispatcher';
+    document.getElementById('dp-prog').style.display = 'none';
+    goTo('stocks');
+  } else {
+    document.getElementById('tab-dispatch').textContent = 'Mes prélèvements';
+    document.getElementById('dp-title').textContent = 'Mes prélèvements du jour';
+    document.getElementById('dp-sub').textContent = 'Prélevez dans l\'ordre — emplacement par emplacement';
+    goTo('dispatch');
+  }
+  loadDispatch();
+}
+
+/* ── Helpers ── */
+function bdg(s) {
+  var m = {'Actif':'b-actif','Commandé':'b-cmd','Alerte stock':'b-alerte','Inactif':'b-off','Terminé':'b-ok','En cours':'b-cours','À lancer':'b-lancer'};
+  return '<span class="bdg '+(m[s]||'b-off')+'">'+(s||'—')+'</span>';
+}
+function sc(n) { return n < 0 ? 's-neg' : n === 0 ? 's-zero' : n <= 3 ? 's-low' : 's-ok'; }
+function kpi(val, label, sub, color) {
+  return '<div class="kpi"><div class="kpi-label">'+label+'</div><div class="kpi-value"'+(color?' style="color:'+color+'"':'')+'>'+val+'</div><div class="kpi-sub">'+sub+'</div></div>';
+}
+
+/* ── STOCKS ── */
+function initStocks() {
+  document.getElementById('stocks-loading').style.display = 'none';
+  document.getElementById('stocks-content').style.display = 'block';
+  var pays = [];
+  STOCKS.forEach(function(x){ var p=x['Pays']; if(p && pays.indexOf(p)<0) pays.push(p); });
+  pays.sort();
+  var sel = document.getElementById('s-pays');
+  sel.innerHTML = '<option value="">Tous les pays</option>';
+  pays.forEach(function(p){ sel.innerHTML += '<option>'+p+'</option>'; });
+  var total=0, al=0, cmd=0, act=0;
+  STOCKS.forEach(function(x){
+    if(x['Statut']==='Actif'){ act++; total+=x['_stockReel']; }
+    if(x['Statut']==='Commandé') cmd++;
+    if(x['_stockReel']<0||x['Statut']==='Alerte stock') al++;
+  });
+  document.getElementById('kpi-stocks').innerHTML =
+    kpi(act,'Références actives','en stock') +
+    kpi(total,'Bouteilles en stock','stock réel total') +
+    kpi(cmd,'Commandées','en attente réception') +
+    kpi(al,'Alertes',al>0?'à corriger':'aucune alerte',al>0?'#791f1f':'#27500a');
+  renderStocks(); renderWH();
+}
+
+function renderStocks() {
+  var q=(document.getElementById('s-q').value||'').toLowerCase();
+  var p=document.getElementById('s-pays').value;
+  var c=document.getElementById('s-couleur').value;
+  var st=document.getElementById('s-statut').value;
+  var data=STOCKS.filter(function(x){
+    if(p&&x['Pays']!==p) return false;
+    if(c&&x['Couleur']!==c) return false;
+    if(st&&x['Statut']!==st) return false;
+    if(q){var h=(x['Cuvée']||'')+(x['Producteur']||'')+(x['Référence']||'');if(h.toLowerCase().indexOf(q)<0)return false;}
+    return true;
+  });
+  document.getElementById('s-cnt').textContent=data.length+' référence'+(data.length>1?'s':'');
+  var html='';
+  data.forEach(function(x){
+    var sr=x['_stockReel'];
+    html+='<tr>'
+      +'<td><span class="mono">'+(x['Référence']||'—')+'</span></td>'
+      +'<td>'+(x['Producteur']||'—')+'</td>'
+      +'<td class="bold">'+(x['Cuvée']||'—')+'</td>'
+      +'<td>'+(x['Pays']||'—')+'</td>'
+      +'<td>'+(x['Couleur']||'—')+'</td>'
+      +'<td class="center">'+(x['Millésime']||'—')+'</td>'
+      +'<td class="center wine">'+(x['Emplacement']||'—')+'</td>'
+      +'<td class="center">'+(x['Stock Initial']||0)+'</td>'
+      +'<td class="center">'+(x['Stock Sorti']||0)+'</td>'
+      +'<td class="center"><span class="'+sc(sr)+'">'+sr+'</span></td>'
+      +'<td>'+bdg(x['Statut'])+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('s-tbody').innerHTML=html||'<tr><td colspan="11" class="nodata">Aucune référence trouvée</td></tr>';
+}
+
+function renderWH() {
+  var emp={};
+  STOCKS.forEach(function(x){var e=x['Emplacement']||'?';if(!emp[e])emp[e]=[];emp[e].push(x);});
+  var cols={'A-P1':'#6b2737','A-P2':'#8b3a4a','B-P1':'#1d5c8a','B-P2':'#2471a3','B-P3':'#3498db','C-P1':'#1a7a4a','D-P1':'#8b6914','D-P2':'#b8860b'};
+  var html='';
+  Object.keys(emp).sort().forEach(function(e){
+    var ws=emp[e];
+    var tot=ws.reduce(function(a,w){return a+w['_stockReel'];},0);
+    html+='<div class="pal"><div class="pal-hdr"><span class="pal-dot" style="background:'+(cols[e]||'#888')+'"></span>'+e+' &mdash; <span style="font-weight:400;color:#8a7060">'+tot+' bt</span></div>';
+    ws.forEach(function(w){html+='<div class="pal-row"><span class="pal-wine">'+(w['Cuvée']||w['Producteur']||'—')+'</span><span class="pal-qty '+sc(w['_stockReel'])+'">'+w['_stockReel']+'</span></div>';});
+    html+='</div>';
+  });
+  document.getElementById('wh-grid').innerHTML=html;
+}
+
+function switchView(v,el){
+  document.querySelectorAll('.stab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('sv-liste').style.display=v==='liste'?'':'none';
+  document.getElementById('sv-entrepot').style.display=v==='entrepot'?'':'none';
+}
+
+/* ── COMMANDES ── */
+function initCmds() {
+  document.getElementById('cmds-loading').style.display='none';
+  document.getElementById('cmds-content').style.display='block';
+  var clients=[];
+  CMDS.forEach(function(x){var cl=(x['Client']||x['client']||'').trim();if(cl&&clients.indexOf(cl)<0)clients.push(cl);});
+  clients.sort();
+  var sel=document.getElementById('c-client');
+  sel.innerHTML='<option value="">Tous les clients</option>';
+  clients.forEach(function(c){sel.innerHTML+='<option>'+c+'</option>';});
+  var ids=[],bt=0,ec=[],al=[];
+  CMDS.forEach(function(x){
+    var id=x['N° Commande']||x['Commande']||'';
+    if(ids.indexOf(id)<0)ids.push(id);
+    bt+=(parseFloat(x['Quantité'])||0);
+    var suivi=x['Suivi']||'';
+    if(suivi==='En cours'&&ec.indexOf(id)<0)ec.push(id);
+    if(suivi==='À lancer'&&al.indexOf(id)<0)al.push(id);
+  });
+  document.getElementById('kpi-cmds').innerHTML=
+    kpi(ids.length,'Commandes total','depuis l\'origine')+
+    kpi(bt,'Bouteilles','total dispatché')+
+    kpi(ec.length,'En cours','commandes actives',ec.length>0?'#854f0b':'')+
+    kpi(al.length,'À lancer','en attente dispatch',al.length>0?'#0c447c':'');
+  // Populate dispatch selector
+  var dSel=document.getElementById('dp-cmd');
+  var dCli=document.getElementById('dp-cli');
+  dSel.innerHTML='<option value="">-- Choisir une commande --</option>';
+  dCli.innerHTML='<option value="">Tous les clients</option>';
+  clients.forEach(function(c){dCli.innerHTML+='<option>'+c+'</option>';});
+  var pend=[];
+  CMDS.forEach(function(x){
+    var id=x['N° Commande']||x['Commande']||'';
+    var suivi=x['Suivi']||'';
+    if((suivi==='À lancer'||suivi==='En cours')&&pend.indexOf(id)<0)pend.push(id);
+  });
+  pend.sort();
+  pend.forEach(function(id){
+    var c=CMDS.find(function(x){return (x['N° Commande']||x['Commande'])===id;})||{};
+    dSel.innerHTML+='<option value="'+id+'">'+id+' — '+(c['Client']||'').trim()+'</option>';
+  });
+  renderCmds();
+}
+
+function renderCmds(){
+  var q=(document.getElementById('c-q').value||'').toLowerCase();
+  var sv=document.getElementById('c-statut').value;
+  var cl=document.getElementById('c-client').value.trim().toLowerCase();
+  var data=CMDS.filter(function(x){
+    if(sv&&x['Suivi']!==sv)return false;
+    if(cl&&(x['Client']||'').trim().toLowerCase()!==cl)return false;
+    if(q){var h=(x['Client']||'')+(x['Cuvée']||'')+(x['N° Commande']||x['Commande']||'');if(h.toLowerCase().indexOf(q)<0)return false;}
+    return true;
+  });
+  document.getElementById('c-cnt').textContent=data.length+' ligne'+(data.length>1?'s':'');
+  var html='';
+  data.forEach(function(x){
+    var id=x['N° Commande']||x['Commande']||'—';
+    html+='<tr>'
+      +'<td class="wine">'+id+'</td>'
+      +'<td>'+(x['Client']||'—').trim()+'</td>'
+      +'<td><span class="mono">'+(x['Référence']||'—')+'</span></td>'
+      +'<td class="bold">'+(x['Cuvée']||'—')+'</td>'
+      +'<td>'+(x['Pays']||'—')+'</td>'
+      +'<td class="center">'+(x['Millésime']||'—')+'</td>'
+      +'<td class="center wine">'+(x['Emplacement']||'—')+'</td>'
+      +'<td class="center bold">'+(parseFloat(x['Quantité'])||0)+'</td>'
+      +'<td class="center"><span class="mono">'+(x['Batch']||'—')+'</span></td>'
+      +'<td>'+bdg(x['Suivi'])+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('c-tbody').innerHTML=html||'<tr><td colspan="10" class="nodata">Aucune commande trouvée</td></tr>';
+}
+
+/* ── DISPATCH ── */
+function filterDpClient(){
+  var cl=document.getElementById('dp-cli').value.trim().toLowerCase();
+  var dSel=document.getElementById('dp-cmd');
+  dSel.innerHTML='<option value="">-- Choisir une commande --</option>';
+  var pend=[];
+  CMDS.forEach(function(x){
+    var id=x['N° Commande']||x['Commande']||'';
+    var suivi=x['Suivi']||'';
+    if((suivi==='À lancer'||suivi==='En cours')&&pend.indexOf(id)<0)pend.push(id);
+  });
+  pend.sort();
+  pend.forEach(function(id){
+    var c=CMDS.find(function(x){return (x['N° Commande']||x['Commande'])===id;})||{};
+    var cli=(c['Client']||'').trim().toLowerCase();
+    if(!cl||cli===cl)dSel.innerHTML+='<option value="'+id+'">'+id+' — '+(c['Client']||'').trim()+'</option>';
+  });
+  document.getElementById('dp-content').innerHTML='<div class="empty-state"><p>Sélectionnez une commande</p></div>';
+}
+
+function loadDispatch(){
+  var id=document.getElementById('dp-cmd').value;
+  var cont=document.getElementById('dp-content');
+  if(!id){cont.innerHTML='<div class="empty-state"><p>Aucune commande sélectionnée</p><small>Choisissez dans le menu ci-dessus</small></div>';return;}
+  var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
+  var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
+  if(!picks[id])picks[id]=sorted.map(function(){return false;});
+  renderPicker(id,sorted);
+}
+
+function togglePick(id,i){
+  picks[id][i]=!picks[id][i];
+  var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
+  var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
+  renderPicker(id,sorted);
+}
+
+function handlePhoto(id,input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    photoData[id]=e.target.result;
+    var preview=document.getElementById('photo-preview-'+id);
+    if(preview){preview.src=e.target.result;preview.style.display='block';}
+    var zone=document.getElementById('photo-zone-'+id);
+    if(zone){zone.querySelector('p').textContent='Photo chargée — prêt pour vérification IA';}
+  };
+  reader.readAsDataURL(file);
+}
+
+function runAICheck(id,sorted){
+  var result=document.getElementById('ai-result-'+id);
+  if(!result)return;
+  if(!photoData[id]){
+    result.className='ai-result error';
+    result.innerHTML='<div class="ai-title">Aucune photo</div><div class="ai-details">Veuillez d\'abord prendre une photo de la caisse.</div>';
+    return;
+  }
+  result.style.display='block';
+  result.className='ai-result checking';
+  result.innerHTML='<div class="ai-title">Analyse en cours...</div><div class="ai-details">Claude vérifie les étiquettes et millésimes...</div>';
+
+  // Build expected list
+  var expected=sorted.map(function(l){
+    return (l['Cuvée']||'')+(l['Millésime']?' '+l['Millésime']:'')+' x'+(l['Quantité']||1);
+  });
+
+  var prompt='Tu es un expert en vins chargé de valider une préparation de commande. '
+    +'Voici les références attendues dans cette caisse :\n'
+    +expected.map(function(e,i){return (i+1)+'. '+e;}).join('\n')
+    +'\n\nAnalyse la photo et vérifie que les bouteilles visibles correspondent à cette liste.'
+    +' Pour chaque bouteille visible, vérifie le nom du vin et le millésime sur l\'étiquette.'
+    +' Réponds en JSON avec ce format exact :'
+    +' {"ok":true/false,"resume":"une phrase résumant le résultat","erreurs":["liste des écarts si il y en a"],"bouteilles_vues":N}'
+    +' Sois concis. Si tu ne peux pas lire clairement une étiquette, mentionne-le dans les erreurs.';
+
+  var base64=photoData[id].split(',')[1];
+  var mediaType=photoData[id].split(';')[0].replace('data:','');
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:500,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+        {type:'text',text:prompt}
+      ]}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    try{
+      var text=data.content[0].text;
+      var json=JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+      if(json.ok){
+        result.className='ai-result ok';
+        result.innerHTML='<div class="ai-title">Caisse validée ✓</div>'
+          +'<div class="ai-details">'+json.resume+'<br><small>'+json.bouteilles_vues+' bouteille'+(json.bouteilles_vues>1?'s':'')+' vérifiée'+(json.bouteilles_vues>1?'s':'')+'</small></div>';
+      }else{
+        result.className='ai-result error';
+        var errs=json.erreurs&&json.erreurs.length?'<ul style="margin-top:6px;padding-left:16px;">'+json.erreurs.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul>':'';
+        result.innerHTML='<div class="ai-title">Écarts détectés ✗</div>'
+          +'<div class="ai-details">'+json.resume+errs+'</div>';
+      }
+    }catch(e){
+      result.className='ai-result error';
+      result.innerHTML='<div class="ai-title">Erreur d\'analyse</div><div class="ai-details">Impossible d\'analyser la réponse. Réessayez.</div>';
+    }
+  })
+  .catch(function(){
+    // Fallback: no API key configured
+    result.className='ai-result error';
+    result.innerHTML='<div class="ai-title">Clé API requise</div>'
+      +'<div class="ai-details">Pour activer la validation photo IA, configurez votre clé API Anthropic.<br>'
+      +'<small>Outils → Extensions → Apps Script dans Google Sheets pour la configurer.</small></div>';
+  });
+}
+
+function validateOrder(id){
+  validated[id]=true;
+  var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
+  var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
+  renderPicker(id,sorted);
+}
+
+function renderPicker(id,sorted){
+  var st=picks[id]||sorted.map(function(){return false;});
+  var total=sorted.reduce(function(a,x){return a+(parseFloat(x['Quantité'])||0);},0);
+  var doneBt=sorted.reduce(function(a,x,i){return a+(st[i]?(parseFloat(x['Quantité'])||0):0);},0);
+  var doneCt=st.filter(Boolean).length;
+  var allDone=doneCt===sorted.length;
+  var isValidated=validated[id];
+  var pct=total>0?Math.round(doneBt/total*100):0;
+  var cli=((sorted[0]||{})['Client']||'').trim();
+  var suivi=(sorted[0]||{})['Suivi']||'';
+
+  if(role==='employe'){
+    document.getElementById('dp-prog').style.display='block';
+    document.getElementById('dp-prog-n').textContent=doneBt+'/'+total;
+  }
+
+  var rows='';
+  sorted.forEach(function(l,i){
+    var done=st[i];
+    rows+='<div class="pick-row'+(done?' done':'')+'" onclick="togglePick(\''+id+'\','+i+')">'
+      +'<div class="chk">'+(done?'✓':'')+'</div>'
+      +'<span class="loc-tag">'+(l['Emplacement']||'?')+'</span>'
+      +'<div style="flex:1">'
+      +'<div class="pick-name">'+(l['Cuvée']||'—')+'</div>'
+      +'<div class="pick-sub">'+(l['Producteur']||'')+(l['Millésime']?' · '+l['Millésime']:'')+(l['Format']?' · '+l['Format']:'')+'</div>'
+      +'</div>'
+      +'<div class="pick-qty">'+(parseFloat(l['Quantité'])||0)+' bt</div>'
+      +'</div>';
+  });
+
+  // Photo + AI section
+  var photoSection='';
+  if(allDone&&!isValidated){
+    var hasPhoto=!!photoData[id];
+    photoSection='<div class="photo-zone" id="photo-zone-'+id+'">'
+      +'<input type="file" accept="image/*" capture="environment" onchange="handlePhoto(\''+id+'\',this)">'
+      +'<p>'+(hasPhoto?'Photo chargée — prêt pour vérification IA':'Prendre une photo de la caisse')+'</p>'
+      +'<small>Appuyez pour ouvrir la caméra ou choisir une photo</small>'
+      +(hasPhoto?'<img id="photo-preview-'+id+'" class="photo-preview" src="'+photoData[id]+'" style="display:block">':'<img id="photo-preview-'+id+'" class="photo-preview">')
+      +'</div>'
+      +'<div class="ai-result'+(hasPhoto?'':' checking')+'" id="ai-result-'+id+'" style="'+(hasPhoto?'':'display:none')+'">'
+      +(hasPhoto?'<div class="ai-title">Photo prête</div><div class="ai-details">Cliquez sur "Vérifier avec IA" pour analyser.</div>':'')
+      +'</div>'
+      +'<button class="vbtn photo-btn" onclick="runAICheck(\''+id+'\','+JSON.stringify(sorted).replace(/'/g,"\\'")+')">Vérifier la caisse avec l\'IA</button>';
+  }
+
+  var btnHtml='';
+  if(isValidated){
+    btnHtml='<button class="vbtn validated" disabled>Préparation validée — pensez à mettre à jour les stocks</button>';
+  }else if(allDone){
+    btnHtml='<button class="vbtn" onclick="validateOrder(\''+id+'\')">Confirmer et valider la préparation</button>';
+  }else{
+    btnHtml='<button class="vbtn" disabled>Cochez toutes les références ('+doneCt+'/'+sorted.length+')</button>';
+  }
+
+  document.getElementById('dp-content').innerHTML=
+    '<div class="pick-card">'
+    +'<div class="pick-card-hdr">'
+    +'<div><span style="font-weight:700;font-size:15px;color:#6b2737">'+id+'</span> <span style="color:#8a7060;font-size:13px">— '+cli+'</span></div>'
+    +'<div>'+bdg(suivi)+'</div>'
+    +'</div>'
+    +'<div class="pick-info">'+sorted.length+' référence'+(sorted.length>1?'s':'')+' · '+total+' bt · triées par emplacement</div>'
+    +'<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div>'
+    +rows
+    +photoSection
+    +btnHtml
+    +'</div>';
+}
+
+/* ── Embedded fallback data ── */
+var EMBEDDED_S = [{"Référence": "PE-DE-01", "Producteur": "Wittmann", "Cuvée": "Westhofener Riesling", "Région": "Rheinhessen", "Pays": "Allemagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-DE-02", "Producteur": "J.J. Prüm", "Cuvée": "Graacher Himmelreich Auslese", "Région": "Mosel", "Pays": "Allemagne", "Couleur": "Blanc", "Millésime": "2012", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-ARG-01", "Producteur": "El Enemigo", "Cuvée": "Cab Franc", "Région": "Mendoza", "Pays": "Argentine", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-ARG-02", "Producteur": "El Enemigo", "Cuvée": "Chardonnay", "Région": "Mendoza", "Pays": "Argentine", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-AUS-01", "Producteur": "Tyrrells", "Cuvée": "Sémillon", "Région": "Hunter Valley", "Pays": "Australie", "Couleur": "Blanc", "Millésime": "2009", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Actif"}, {"Référence": "PE-AUS-02", "Producteur": "Giant Steps", "Cuvée": "Sexton Vineyard", "Région": "Yarra Valley", "Pays": "Australie", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 6, "Stock Sorti": 3, "Stock Réel": 3, "Statut": "Actif"}, {"Référence": "PE-AUS-03", "Producteur": "Giant Steps", "Cuvée": "Fatal Shore Pinot Noir", "Région": "Yarra Valley", "Pays": "Australie", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 6, "Stock Sorti": 2, "Stock Réel": 4, "Statut": "Actif"}, {"Référence": "PE-AUS-03", "Producteur": "Tolpuddle Vineyard", "Cuvée": "Pinot Noir", "Région": "Coal River Valley, Tasmania", "Pays": "Australie", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 2, "Stock Sorti": 2, "Stock Réel": 0, "Statut": "Actif"}, {"Référence": "PE-ESP-01", "Producteur": "Vega Sicilia", "Cuvée": "Unico Magnum", "Région": "Ribera del Duero", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2013", "Format": "150cl", "Emplacement": "B-P1", "Stock Initial": 3, "Stock Sorti": 0, "Stock Réel": 3, "Statut": "Actif"}, {"Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Région": "Priorat", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 18, "Stock Sorti": 8, "Stock Réel": 10, "Statut": "Actif"}, {"Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Région": "Priorat", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 24, "Stock Sorti": 11, "Stock Réel": 13, "Statut": "Actif"}, {"Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Région": "Priorat", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 42, "Stock Sorti": 26, "Stock Réel": 16, "Statut": "Actif"}, {"Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Région": "Priorat", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 12, "Stock Sorti": 14, "Stock Réel": -2, "Statut": "Alerte stock"}, {"Référence": "PE-ESP-06", "Producteur": "Alfredo Arribas", "Cuvée": "Tot-U", "Région": "Priorat", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 24, "Stock Sorti": 6, "Stock Réel": 18, "Statut": "Actif"}, {"Référence": "PE-ESP-20", "Producteur": "Palacios Remondo", "Cuvée": "Propiedad", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 24, "Stock Sorti": 0, "Stock Réel": 24, "Statut": "Commandé"}, {"Référence": "PE-ESP-21", "Producteur": "Palacios Remondo", "Cuvée": "Quiñon de Valmira", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-ESP-22", "Producteur": "La Rioja Alta", "Cuvée": "Gran Reserva 890", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2010", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-ESP-23", "Producteur": "Rafael Palacios", "Cuvée": "As Sortes", "Région": "Valdeorras", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-ESP-24", "Producteur": "Vega Sicilia", "Cuvée": "Unico Reserva Especial", "Région": "Ribera del Duero", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "NV", "Format": "75cl", "Emplacement": "B-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-ESP-07", "Producteur": "Dominio de Es", "Cuvée": "Reserva", "Région": "Ribera del Duero", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 8, "Stock Sorti": 5, "Stock Réel": 3, "Statut": "Actif"}, {"Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Région": "Bierzo", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 18, "Stock Sorti": 9, "Stock Réel": 9, "Statut": "Actif"}, {"Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Région": "Bierzo", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 10, "Stock Sorti": 9, "Stock Réel": 1, "Statut": "Actif"}, {"Référence": "PE-ESP-10", "Producteur": "Palacios Rioja", "Cuvée": "Montesa", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 12, "Stock Sorti": 6, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 24, "Stock Sorti": 20, "Stock Réel": 4, "Statut": "Actif"}, {"Référence": "PE-ESP-12", "Producteur": "Nanclares y Prieto", "Cuvée": "Tempus Vivendi", "Région": "Galice", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P2", "Stock Initial": 12, "Stock Sorti": 7, "Stock Réel": 5, "Statut": "Actif"}, {"Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Région": "Galice", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 36, "Stock Sorti": 16, "Stock Réel": 20, "Statut": "Actif"}, {"Référence": "PE-ESP-14", "Producteur": "Artadi", "Cuvée": "El Carretil", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 5, "Stock Sorti": 3, "Stock Réel": 2, "Statut": "Actif"}, {"Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Région": "Toro", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 9, "Stock Sorti": 9, "Stock Réel": 0, "Statut": "Actif"}, {"Référence": "PE-ESP-16", "Producteur": "Artadi", "Cuvée": "La Hoya", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 12, "Stock Sorti": 7, "Stock Réel": 5, "Statut": "Actif"}, {"Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 36, "Stock Sorti": 23, "Stock Réel": 13, "Statut": "Actif"}, {"Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Région": "Rioja", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 12, "Stock Sorti": 8, "Stock Réel": 4, "Statut": "Actif"}, {"Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Région": "Navarre", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Stock Initial": 9, "Stock Sorti": 9, "Stock Réel": 0, "Statut": "Actif"}, {"Référence": "PE-FR-01", "Producteur": "Camin Larredya", "Cuvée": "Costa Blanca", "Région": "Jurançon", "Pays": "France", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 18, "Stock Sorti": 0, "Stock Réel": 18, "Statut": "Actif"}, {"Référence": "PE-FR-02", "Producteur": "Joliette", "Cuvée": "Joliette", "Région": "Jurançon", "Pays": "France", "Couleur": "Blanc", "Millésime": "2013", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Actif"}, {"Référence": "PE-FR-03", "Producteur": "Camin Larredya", "Cuvée": "Part d'avant", "Région": "Jurançon", "Pays": "France", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 12, "Stock Sorti": 6, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-FR-04", "Producteur": "Camin Larredya", "Cuvée": "La Virada", "Région": "Jurançon", "Pays": "France", "Couleur": "Blanc", "Millésime": "2024", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 12, "Stock Sorti": 0, "Stock Réel": 12, "Statut": "Actif"}, {"Référence": "PE-FR-05", "Producteur": "Aloxe Corton", "Cuvée": "Les Crapozuets", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 12, "Stock Sorti": 0, "Stock Réel": 12, "Statut": "Actif"}, {"Référence": "PE-FR-12", "Producteur": "Marchand Tawse", "Cuvée": "Gevrey 1er Cru Champeaux", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-FR-13", "Producteur": "Marchand Tawse", "Cuvée": "Beaune 1er Cru Clos du Roi", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 18, "Stock Sorti": 0, "Stock Réel": 18, "Statut": "Commandé"}, {"Référence": "PE-FR-14", "Producteur": "Marchand Tawse", "Cuvée": "Gevrey-Chambertin Aux Etelois", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-FR-15", "Producteur": "Marchand Tawse", "Cuvée": "Chambolle-Musigny", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-FR-16", "Producteur": "Marchand Tawse", "Cuvée": "Mazoyères-Chambertin Grand Cru", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Commandé"}, {"Référence": "PE-FR-17", "Producteur": "Marchand Tawse", "Cuvée": "Vosne-Romanée", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-FR-18", "Producteur": "Marchand Tawse", "Cuvée": "Savigny-lès-Beaune 1er Cru Vergelesses", "Région": "Bourgogne", "Pays": "France", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "A-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-FR-06", "Producteur": "Michel Mallard", "Cuvée": "Corton GC Les Renardes", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2017", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 6, "Stock Sorti": 6, "Stock Réel": 0, "Statut": "Actif"}, {"Référence": "PE-FR-07", "Producteur": "Michel Mallard", "Cuvée": "Corton GC Les Renardes", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 12, "Stock Sorti": 8, "Stock Réel": 4, "Statut": "Actif"}, {"Référence": "PE-FR-08", "Producteur": "Marchand Tawse", "Cuvée": "Marsannay", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-FR-09", "Producteur": "Marchand Tawse", "Cuvée": "Beaune 1er Cru Clos du Roi", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-FR-10", "Producteur": "Marchand Tawse", "Cuvée": "Pommard Les Saussilles", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-FR-11", "Producteur": "Marchand Tawse", "Cuvée": "Bourgogne Vigne Blanche", "Région": "Bourgogne", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Actif"}, {"Référence": "PE-ITAL-01", "Producteur": "Casanova di Neri", "Cuvée": "Brunello Riserva Cerralto", "Région": "Toscane", "Pays": "Italie", "Couleur": "Rouge", "Millésime": "2013", "Format": "150cl", "Emplacement": "C-P1", "Stock Initial": 1, "Stock Sorti": 0, "Stock Réel": 1, "Statut": "Actif"}, {"Référence": "PE-ITAL-02", "Producteur": "La Spinetta", "Cuvée": "Moscato d’Asti Bricco Quaglia", "Région": "Piémont", "Pays": "Italie", "Couleur": "Blanc", "Millésime": "2025", "Format": "75cl", "Emplacement": "C-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-ITAL-03", "Producteur": "Benanti", "Cuvée": "Nerello Cappuccio", "Région": "Sicile", "Pays": "Italie", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "C-P1", "Stock Initial": 6, "Stock Sorti": 0, "Stock Réel": 6, "Statut": "Commandé"}, {"Référence": "PE-PORT-01", "Producteur": "Quevedo", "Cuvée": "Colheita", "Région": "Douro", "Pays": "Portugal", "Couleur": "Porto", "Millésime": "1992", "Format": "75cl", "Emplacement": "D-P1", "Stock Initial": 2, "Stock Sorti": 0, "Stock Réel": 2, "Statut": "Actif"}];
+var EMBEDDED_C = [{"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-FR-07", "Producteur": "Michel Mallard", "Cuvée": "Corton GC Les Renardes", "Pays": "France", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-FR-06", "Producteur": "Michel Mallard", "Cuvée": "Corton GC Les Renardes", "Pays": "France", "Couleur": "Rouge", "Millésime": "2017", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 6.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-FR-03", "Producteur": "Camin Larredya", "Cuvée": "Part d'avant", "Pays": "France", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 6.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-001", "Client": "Dedaele - Econocom", "Référence": "PE-AUS-02", "Producteur": "Giant Steps", "Cuvée": "Sexton Vineyard", "Pays": "Australie", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "D-P1", "Quantité": 3.0, "Batch": "B1", "Suivi": "Terminé"}, {"N° Commande": "CMD-002", "Client": "Kappenergy ", "Référence": "PE-FR-05", "Producteur": "Aloxe Corton", "Cuvée": "Les Crapozuets", "Pays": "France", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 12.0, "Batch": "B2", "Suivi": "En cours"}, {"N° Commande": "CMD-002", "Client": "Kappenergy ", "Référence": "PE-FR-08", "Producteur": "Marchand Tawse", "Cuvée": "Marsannay", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B2", "Suivi": "En cours"}, {"N° Commande": "CMD-002", "Client": "Kappenergy ", "Référence": "PE-FR-09", "Producteur": "Marchand Tawse", "Cuvée": "Beaune 1er Cru Clos du Roi", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B2", "Suivi": "En cours"}, {"N° Commande": "CMD-002", "Client": "Kappenergy ", "Référence": "PE-FR-10", "Producteur": "Marchand Tawse", "Cuvée": "Pommard Les Saussilles", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B2", "Suivi": "En cours"}, {"N° Commande": "CMD-002", "Client": "Kappenergy ", "Référence": "PE-FR-11", "Producteur": "Marchand Tawse", "Cuvée": "Bourgogne Vigne Blanche", "Pays": "France", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 6.0, "Batch": "B3", "Suivi": "En cours"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-07", "Producteur": "Dominio de Es", "Cuvée": "Reserva", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 6.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-16", "Producteur": "Artadi", "Cuvée": "La Hoya", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 3.0, "Batch": "B3", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 3.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-14", "Producteur": "Artadi", "Cuvée": "El Carretil", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-003", "Client": "Gianduzzo ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-004", "Client": "Cajéri", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-004", "Client": "Cajéri", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-004", "Client": "Cajéri", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-004", "Client": "Cajéri", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-004", "Client": "Cajéri", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-14", "Producteur": "Artadi", "Cuvée": "El Carretil", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-07", "Producteur": "Dominio de Es", "Cuvée": "Reserva", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-005", "Client": "TCA - Renaud ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-006", "Client": "Tribot Laspierre ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-007", "Client": "Folie Desjardins ", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B4", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 3.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 3.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-16", "Producteur": "Artadi", "Cuvée": "La Hoya", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-008", "Client": "Chochois - CCPA", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-009", "Client": "Maxence Gaudillot ", "Référence": "PE-AUS-03", "Producteur": "Tolpuddle Vineyard", "Cuvée": "Pinot Noir", "Pays": "Australie", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "D-P1", "Quantité": 2.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-010", "Client": "Dupouy", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-010", "Client": "Dupouy", "Référence": "PE-ESP-16", "Producteur": "Artadi", "Cuvée": "La Hoya", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-010", "Client": "Dupouy", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-010", "Client": "Dupouy", "Référence": "PE-ESP-07", "Producteur": "Dominio de Es", "Cuvée": "Reserva", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-010", "Client": "Dupouy", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B5", "Suivi": "Terminé"}, {"N° Commande": "CMD-011", "Client": "Larrieu ", "Référence": "PE-FR-07", "Producteur": "Michel Mallard", "Cuvée": "Corton GC Les Renardes", "Pays": "France", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "A-P2", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-15", "Producteur": "Vega Sicilia", "Cuvée": "Pintia", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-012", "Client": "Miquel", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-03", "Producteur": "Alfredo Arribas", "Cuvée": "PXX", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-08", "Producteur": "Palacios Bierzo", "Cuvée": "Moncerbal", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2020", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-07", "Producteur": "Dominio de Es", "Cuvée": "Reserva", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-013", "Client": "Maurel", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-10", "Producteur": "Palacios Rioja", "Cuvée": "Montesa", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-12", "Producteur": "Nanclares y Prieto", "Cuvée": "Tempus Vivendi", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-014", "Client": "Dupuy", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B6", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-12", "Producteur": "Nanclares y Prieto", "Cuvée": "Tempus Vivendi", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-015", "Client": "Baron", "Référence": "PE-ESP-06", "Producteur": "Alfredo Arribas", "Cuvée": "Tot-U", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-016", "Client": "Garabédian", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-017", "Client": "Saron ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-018", "Client": "Cernier ", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B7", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-019", "Client": "Mourait", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-020", "Client": "Arditt", "Référence": "PE-ESP-19", "Producteur": "Artazu", "Cuvée": "Santa Cruz Blanco", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-12", "Producteur": "Nanclares y Prieto", "Cuvée": "Tempus Vivendi", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-16", "Producteur": "Artadi", "Cuvée": "La Hoya", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-05", "Producteur": "Alfredo Arribas", "Cuvée": "Damunt Roca", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-021", "Client": "Crespin", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-12", "Producteur": "Nanclares y Prieto", "Cuvée": "Tempus Vivendi", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-022", "Client": "Javerlhac", "Référence": "PE-ESP-06", "Producteur": "Alfredo Arribas", "Cuvée": "Tot-U", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-09", "Producteur": "Palacios Bierzo", "Cuvée": "Corullon", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B8", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-10", "Producteur": "Palacios Rioja", "Cuvée": "Montesa", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-06", "Producteur": "Alfredo Arribas", "Cuvée": "Tot-U", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2023", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-023", "Client": "Eva & Jo", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-10", "Producteur": "Palacios Rioja", "Cuvée": "Montesa", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-024", "Client": "Lacoste ", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-025", "Client": "DelArco", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-025", "Client": "DelArco", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-025", "Client": "DelArco", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-025", "Client": "DelArco", "Référence": "PE-ESP-10", "Producteur": "Palacios Rioja", "Cuvée": "Montesa", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-025", "Client": "DelArco", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 2.0, "Batch": "B9", "Suivi": "Terminé"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-17", "Producteur": "Artadi", "Cuvée": "Valdegines ", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-13", "Producteur": "Nanclares y Prieto", "Cuvée": "O Bocoi Vello", "Pays": "Espagne", "Couleur": "Blanc", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-04", "Producteur": "Alfredo Arribas", "Cuvée": "La Llera", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-02", "Producteur": "Alfredo Arribas", "Cuvée": "Per Sé", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P1", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-18", "Producteur": "Artadi", "Cuvée": "Viñas de Gain", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2019", "Format": "75cl", "Emplacement": "B-P3", "Quantité": 1.0, "Batch": "B9", "Suivi": "En cours"}, {"N° Commande": "CMD-026", "Client": "Lacrotte ", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-027", "Client": "Cajéri ", "Référence": "PE-ESP-11", "Producteur": "Palacios Rioja", "Cuvée": "Propiedad", "Pays": "Espagne", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "B-P2", "Quantité": 6.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "PE-FR-13", "Producteur": "Marchand Tawse", "Cuvée": "Beaune 1er Cru Clos du Roi", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "PE-FR-14", "Producteur": "Marchand Tawse", "Cuvée": "Gevrey-Chambertin Aux Etelois", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "PE-FR-15", "Producteur": "Marchand Tawse", "Cuvée": "Chambolle-Musigny", "Pays": "France", "Couleur": "Rouge", "Millésime": "2021", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "PE-FR-17", "Producteur": "Marchand Tawse", "Cuvée": "Vosne-Romanée", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "PE-FR-12", "Producteur": "Marchand Tawse", "Cuvée": "Gevrey 1er Cru Champeaux", "Pays": "France", "Couleur": "Rouge", "Millésime": "2022", "Format": "75cl", "Emplacement": "A-P1", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-028", "Client": "Aroldi ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 1.0, "Batch": "B10", "Suivi": "En cours"}, {"N° Commande": "CMD-029", "Client": "JL Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-029", "Client": "JL Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-029", "Client": "JL Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-029", "Client": "JL Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-029", "Client": "JL Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "À lancer"}, {"N° Commande": "CMD-030", "Client": "Eric Labarbarie ", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}, {"N° Commande": "CMD-031 ", "Client": "Saron", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}, {"N° Commande": "CMD-031 ", "Client": "Saron", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}, {"N° Commande": "CMD-032", "Client": "Dauzas", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}, {"N° Commande": "CMD-032", "Client": "Dauzas", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}, {"N° Commande": "CMD-032", "Client": "Dauzas", "Référence": "", "Producteur": "", "Cuvée": "", "Pays": "", "Couleur": "", "Millésime": "", "Format": "", "Emplacement": "", "Quantité": 0.0, "Batch": "", "Suivi": "Terminé"}];
+
+/* ── Init ── */
+// Always start with embedded data immediately
+STOCKS = EMBEDDED_S;
+STOCKS.forEach(function(s){
+  var ini = parseFloat(s['Stock Initial'])||0;
+  var out = parseFloat(s['Stock Sorti'])||0;
+  s['_stockReel'] = ini - out;
+});
+CMDS = EMBEDDED_C;
+setSyncStatus('Données du ' + new Date().toLocaleDateString('fr-FR') + ' — cliquez Actualiser si connecté', null);
+initStocks();
+initCmds();
+
+// Then try live fetch in background
+loadAll();
+setInterval(function(){ loadAll(); }, 300000);
+</script>
+</body>
+</html>
