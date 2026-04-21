@@ -89,7 +89,7 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 .pal-wine{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pal-qty{font-weight:700;flex-shrink:0;}
 
-/* Dispatch */
+/* Préparation */
 .dp-hdr{background:#3d1020;color:white;border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
 .dp-hdr h2{font-size:18px;font-weight:700;color:#e8c96a;margin-bottom:2px;}
 .dp-hdr p{font-size:12px;color:rgba(255,255,255,0.55);}
@@ -162,8 +162,8 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
     <div class="tab" id="tab-dispatch" onclick="goTo('dispatch')">Dispatch</div>
   </div>
   <div class="role-btns">
-    <button class="rbtn patron on" id="rbtn-patron" onclick="setRole('patron')">Patron</button>
-    <button class="rbtn employe" id="rbtn-employe" onclick="setRole('employe')">Employée</button>
+    <button class="rbtn pilotage on" id="rbtn-pilotage" onclick="setRole('pilotage')">Pilotage</button>
+    <button class="rbtn preparation" id="rbtn-preparation" onclick="setRole('preparation')">Préparation</button>
   </div>
 </nav>
 
@@ -240,7 +240,7 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 <script>
 var SHEET_ID = '1znLTLaJgzwUEo-mymIeo708_n3ri8sNiTt7TJevFxKE';
 var STOCKS = [], CMDS = [];
-var role = 'patron';
+var role = 'pilotage';
 var picks = {}, validated = {}, photoData = {};
 var lastSync = null;
 
@@ -343,9 +343,9 @@ function goTo(p) {
 
 function setRole(r) {
   role = r;
-  document.getElementById('rbtn-patron').classList.toggle('on', r==='patron');
-  document.getElementById('rbtn-employe').classList.toggle('on', r==='employe');
-  if (r==='patron') {
+  document.getElementById('rbtn-pilotage').classList.toggle('on', r==='pilotage');
+  document.getElementById('rbtn-preparation').classList.toggle('on', r==='preparation');
+  if (r==='pilotage') {
     document.getElementById('tab-dispatch').textContent = 'Dispatch';
     document.getElementById('dp-title').textContent = 'Ordre de prélèvement';
     document.getElementById('dp-sub').textContent = 'Sélectionnez une commande à dispatcher';
@@ -662,7 +662,7 @@ function renderPicker(id,sorted){
   var cli=((sorted[0]||{})['Client']||'').trim();
   var suivi=(sorted[0]||{})['Suivi']||'';
 
-  if(role==='employe'){
+  if(role==='preparation'){
     document.getElementById('dp-prog').style.display='block';
     document.getElementById('dp-prog-n').textContent=doneBt+'/'+total;
   }
