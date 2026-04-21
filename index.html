@@ -262,21 +262,45 @@ var lastSync = null;
 
 /* ── Google Sheets fetch ── */
 function fetchSheet(sheetName, callback) {
-  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetName);
-  var script = document.createElement('script');
-  var cbName = 'cb_' + sheetName.replace(/\W/g,'_') + '_' + Date.now();
-  window[cbName] = function(data) {
-    document.body.removeChild(script);
-    delete window[cbName];
-    callback(parseGviz(data));
-  };
-  script.src = url + '&responseHandler=' + cbName;
-  script.onerror = function() {
-    document.body.removeChild(script);
-    delete window[cbName];
-    callback(null);
-  };
-  document.body.appendChild(script);
+  // Use CSV export - works with CORS for public sheets
+  var gid = sheetName === 'Catalogue & Stocks' ? '0' : sheetName === 'Commandes' ? '1' : '2';
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(sheetName);
+  fetch(url)
+    .then(function(r){ return r.text(); })
+    .then(function(csv){ callback(parseCSV(csv)); })
+    .catch(function(){ callback(null); });
+}
+
+function parseCSV(csv) {
+  var lines = csv.split('\n');
+  if (lines.length < 2) return [];
+  var headers = parseCSVLine(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    var vals = parseCSVLine(lines[i]);
+    var obj = {};
+    var hasData = false;
+    for (var j = 0; j < headers.length; j++) {
+      var v = vals[j] !== undefined ? vals[j] : '';
+      obj[headers[j]] = v;
+      if (v) hasData = true;
+    }
+    if (hasData) rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
 }
 
 function parseGviz(data) {
