@@ -253,6 +253,8 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 
 <script>
 var SHEET_ID = '1znLTLaJgzwUEo-mymIeo708_n3ri8sNiTt7TJevFxKE';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwPQjW-6LUMw5gQdn3K70_dfkGVHT-Mv29SZPNGmD1NZTodTcidPgIDzkzJIqwkkVw/exec';
+var SECRET_TOKEN = 'PE2026secure';
 var STOCKS = [], CMDS = [];
 var role = 'pilotage';
 var picks = {}, validated = {}, photoData = {};
@@ -617,22 +619,23 @@ function runAICheck(id,sorted){
   var base64=photoData[id].split(',')[1];
   var mediaType=photoData[id].split(';')[0].replace('data:','');
 
-  fetch('https://api.anthropic.com/v1/messages',{
+  fetch(SCRIPT_URL,{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
+      action: 'verifier_photo',
+      token: SECRET_TOKEN,
       model:'claude-sonnet-4-20250514',
       max_tokens:500,
-      messages:[{role:'user',content:[
-        {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-        {type:'text',text:prompt}
-      ]}]
+      mediaType: mediaType,
+      imageData: base64,
+      prompt: prompt
     })
   })
   .then(function(r){return r.json();})
   .then(function(data){
     try{
-      var text=data.content[0].text;
+      var text=(data.result&&data.result.content)?data.result.content[0].text:data.content[0].text;
       var json=JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
       if(json.ok){
         result.className='ai-result ok';
@@ -659,10 +662,38 @@ function runAICheck(id,sorted){
 }
 
 function validateOrder(id){
-  validated[id]=true;
-  var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
-  var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
-  renderPicker(id,sorted);
+  // Show loading state
+  var btn = document.querySelector('.vbtn:not(:disabled)');
+  if(btn){ btn.textContent = 'Validation en cours...'; btn.disabled = true; }
+
+  // Call Apps Script to update Sheets
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({action: 'valider_commande', commande: id, token: SECRET_TOKEN})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.success){
+      validated[id] = true;
+      setSyncStatus('Commande '+id+' validée — stocks mis à jour dans Google Sheets', true);
+    } else {
+      setSyncStatus('Validation OK localement (synchro Sheets dans 5 min)', null);
+      validated[id] = true;
+    }
+  })
+  .catch(function(){
+    // Fallback: mark as validated locally anyway
+    validated[id] = true;
+    setSyncStatus('Commande validée localement — actualisez Sheets manuellement', null);
+  })
+  .finally(function(){
+    var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
+    var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
+    renderPicker(id,sorted);
+    // Reload data after 3 seconds
+    setTimeout(function(){ loadAll(); }, 3000);
+  });
 }
 
 function renderPicker(id,sorted){
