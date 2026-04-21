@@ -143,6 +143,20 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 /* Refresh button */
 .refresh-btn{padding:5px 12px;border:1px solid #ddd5c8;border-radius:6px;font-size:12px;background:white;color:#5a4030;cursor:pointer;font-family:inherit;transition:all 0.15s;}
 .refresh-btn:hover{border-color:#6b2737;color:#6b2737;}
+
+.config-btn{position:fixed;bottom:16px;right:16px;width:38px;height:38px;background:#3d1020;border:2px solid #c9a84c;border-radius:50%;color:#c9a84c;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.config-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;}
+.config-modal.on{display:flex;}
+.config-box{background:white;border-radius:12px;padding:1.5rem;width:380px;max-width:90vw;}
+.config-box h3{font-size:15px;font-weight:600;color:#3d1020;margin-bottom:6px;}
+.config-box p{font-size:12px;color:#8a7060;margin-bottom:12px;line-height:1.5;}
+.config-input{width:100%;padding:8px 12px;border:1px solid #ddd5c8;border-radius:7px;font-size:12px;font-family:monospace;margin-bottom:10px;box-sizing:border-box;}
+.config-input:focus{outline:none;border-color:#6b2737;}
+.config-actions{display:flex;gap:8px;}
+.config-save{flex:1;padding:9px;background:#3d1020;color:#c9a84c;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.config-cancel{padding:9px 14px;background:#f0ebe3;color:#5a4030;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-family:inherit;}
+.key-ok{font-size:11px;background:#eaf3de;color:#27500a;padding:6px 10px;border-radius:5px;margin-bottom:10px;display:block;}
+.key-missing{font-size:11px;background:#fcebeb;color:#791f1f;padding:6px 10px;border-radius:5px;margin-bottom:10px;display:block;}
 </style>
 </head>
 <body>
@@ -605,7 +619,7 @@ function runAICheck(id,sorted){
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({
       model:'claude-sonnet-4-20250514',
       max_tokens:500,
@@ -740,6 +754,38 @@ initCmds();
 // Then try live fetch in background
 loadAll();
 setInterval(function(){ loadAll(); }, 300000);
+</script>
+
+<button class="config-btn" onclick="openConfig()" title="Configuration API">&#9881;</button>
+<div class="config-modal" id="config-modal">
+  <div class="config-box">
+    <h3>Cle API Claude</h3>
+    <p>Entrez votre cle API Anthropic pour activer la validation photo IA. Elle est stockee dans votre navigateur uniquement — jamais en ligne.</p>
+    <div id="key-status-div"></div>
+    <input class="config-input" type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+    <div class="config-actions">
+      <button class="config-save" onclick="saveApiKey()">Enregistrer</button>
+      <button class="config-cancel" onclick="closeConfig()">Annuler</button>
+    </div>
+  </div>
+</div>
+<script>
+function getApiKey(){return localStorage.getItem('pe_api_key')||'';}
+function openConfig(){
+  var k=getApiKey();
+  var div=document.getElementById('key-status-div');
+  div.innerHTML=k?'<span class="key-ok">Cle configuree — validation photo active</span>':'<span class="key-missing">Aucune cle — validation photo desactivee</span>';
+  document.getElementById('api-key-input').value='';
+  document.getElementById('api-key-input').placeholder=k?'(cle deja enregistree — resaisir pour modifier)':'sk-ant-api03-...';
+  document.getElementById('config-modal').classList.add('on');
+}
+function closeConfig(){document.getElementById('config-modal').classList.remove('on');}
+function saveApiKey(){
+  var k=document.getElementById('api-key-input').value.trim();
+  if(k){localStorage.setItem('pe_api_key',k);closeConfig();alert('Cle enregistree !');}
+  else{closeConfig();}
+}
+document.getElementById('config-modal').addEventListener('click',function(e){if(e.target===this)closeConfig();});
 </script>
 </body>
 </html>
