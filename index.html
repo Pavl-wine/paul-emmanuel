@@ -590,7 +590,8 @@ function handlePhoto(id,input){
   reader.readAsDataURL(file);
 }
 
-function runAICheck(id,sorted){
+function runAICheck(id,_unused){
+  var sorted=window['_sorted_'+id]||[];
   var result=document.getElementById('ai-result-'+id);
   if(!result)return;
   if(!photoData[id]){
@@ -687,6 +688,7 @@ function validateOrder(id){
 }
 
 function renderPicker(id,sorted){
+  window['_sorted_'+id]=sorted; // store for AI check
   var st=picks[id]||sorted.map(function(){return false;});
   var total=sorted.reduce(function(a,x){return a+(parseFloat(x['Quantité'])||0);},0);
   var doneBt=sorted.reduce(function(a,x,i){return a+(st[i]?(parseFloat(x['Quantité'])||0):0);},0);
@@ -729,7 +731,7 @@ function renderPicker(id,sorted){
       +'<div class="ai-result'+(hasPhoto?'':' checking')+'" id="ai-result-'+id+'" style="'+(hasPhoto?'':'display:none')+'">'
       +(hasPhoto?'<div class="ai-title">Photo prête</div><div class="ai-details">Cliquez sur "Vérifier avec IA" pour analyser.</div>':'')
       +'</div>'
-      +'<button class="vbtn photo-btn" onclick="runAICheck(\''+id+'\','+JSON.stringify(sorted).replace(/'/g,"\\'")+')">Vérifier la caisse avec l\'IA</button>';
+      +'<button class="vbtn photo-btn" onclick="runAICheck(\''+id+'\')" >Vérifier la caisse avec l\'IA</button>';
   }
 
   var btnHtml='';
