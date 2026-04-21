@@ -270,7 +270,7 @@ function fetchSheet(sheetName, callback) {
     delete window[cbName];
     callback(parseGviz(data));
   };
-  script.src = url + '&tqx=out:json&responseHandler=' + cbName;
+  script.src = url + '&responseHandler=' + cbName;
   script.onerror = function() {
     document.body.removeChild(script);
     delete window[cbName];
