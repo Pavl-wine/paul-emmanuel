@@ -273,10 +273,11 @@ function fetchSheet(sheetName, callback) {
 
 function parseCSV(csv) {
   var lines = csv.split('\n');
-  if (lines.length < 2) return [];
-  var headers = parseCSVLine(lines[0]);
+  if (lines.length < 3) return [];
+  // Row 0 = section title (merged), Row 1 = real headers
+  var headers = parseCSVLine(lines[1]);
   var rows = [];
-  for (var i = 1; i < lines.length; i++) {
+  for (var i = 2; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
     var vals = parseCSVLine(lines[i]);
     var obj = {};
