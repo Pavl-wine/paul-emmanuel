@@ -632,7 +632,7 @@ function runAICheck(id){
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-5-20251022',
+      model:'claude-sonnet-4-5',
       max_tokens:500,
       messages:[{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
@@ -644,7 +644,14 @@ function runAICheck(id){
   .then(function(data){
     try{
       var text=data.content[0].text;
-      var json=JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+      // Try to extract JSON, if not found show raw response
+      var jsonMatch = text.match(/\{[\s\S]*\}/);
+      if(!jsonMatch){
+        result.className='ai-result ok';
+        result.innerHTML='<div class="ai-title">Analyse IA</div><div class="ai-details">'+text+'</div>';
+        return;
+      }
+      var json=JSON.parse(jsonMatch[0]);
       if(json.ok){
         result.className='ai-result ok';
         result.innerHTML='<div class="ai-title">Caisse validée ✓</div>'
