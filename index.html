@@ -253,8 +253,6 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 
 <script>
 var SHEET_ID = '1znLTLaJgzwUEo-mymIeo708_n3ri8sNiTt7TJevFxKE';
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwPQjW-6LUMw5gQdn3K70_dfkGVHT-Mv29SZPNGmD1NZTodTcidPgIDzkzJIqwkkVw/exec';
-var SECRET_TOKEN = 'PE2026secure';
 var STOCKS = [], CMDS = [];
 var role = 'pilotage';
 var picks = {}, validated = {}, photoData = {};
@@ -262,46 +260,21 @@ var lastSync = null;
 
 /* ── Google Sheets fetch ── */
 function fetchSheet(sheetName, callback) {
-  // Use CSV export - works with CORS for public sheets
-  var gid = sheetName === 'Catalogue & Stocks' ? '0' : sheetName === 'Commandes' ? '1' : '2';
-  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(sheetName);
-  fetch(url)
-    .then(function(r){ return r.text(); })
-    .then(function(csv){ callback(parseCSV(csv)); })
-    .catch(function(){ callback(null); });
-}
-
-function parseCSV(csv) {
-  var lines = csv.split('\n');
-  if (lines.length < 3) return [];
-  // Row 0 = section title (merged), Row 1 = real headers
-  var headers = parseCSVLine(lines[1]);
-  var rows = [];
-  for (var i = 2; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    var vals = parseCSVLine(lines[i]);
-    var obj = {};
-    var hasData = false;
-    for (var j = 0; j < headers.length; j++) {
-      var v = vals[j] !== undefined ? vals[j] : '';
-      obj[headers[j]] = v;
-      if (v) hasData = true;
-    }
-    if (hasData) rows.push(obj);
-  }
-  return rows;
-}
-
-function parseCSVLine(line) {
-  var result = [], cur = '', inQ = false;
-  for (var i = 0; i < line.length; i++) {
-    var c = line[i];
-    if (c === '"') { inQ = !inQ; }
-    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-    else { cur += c; }
-  }
-  result.push(cur.trim());
-  return result;
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetName);
+  var script = document.createElement('script');
+  var cbName = 'cb_' + sheetName.replace(/\W/g,'_') + '_' + Date.now();
+  window[cbName] = function(data) {
+    document.body.removeChild(script);
+    delete window[cbName];
+    callback(parseGviz(data));
+  };
+  script.src = url + '&tqx=out:json&responseHandler=' + cbName;
+  script.onerror = function() {
+    document.body.removeChild(script);
+    delete window[cbName];
+    callback(null);
+  };
+  document.body.appendChild(script);
 }
 
 function parseGviz(data) {
@@ -615,8 +588,8 @@ function handlePhoto(id,input){
   reader.readAsDataURL(file);
 }
 
-function runAICheck(id,_unused){
-  var sorted=window['_sorted_'+id]||[];
+function runAICheck(id){
+  var sorted=window['_pd_'+id]||[];
   var result=document.getElementById('ai-result-'+id);
   if(!result)return;
   if(!photoData[id]){
@@ -647,14 +620,9 @@ function runAICheck(id,_unused){
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':getApiKey(),
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
+    headers:{'Content-Type':'application/json','x-api-key':getApiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-sonnet-4-5-20251022',
       max_tokens:500,
       messages:[{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
@@ -692,28 +660,14 @@ function runAICheck(id,_unused){
 }
 
 function validateOrder(id){
-  // Show loading state
-  var btn = document.querySelector('.vbtn:not(:disabled)');
-  if(btn){ btn.textContent = 'Validation en cours...'; btn.disabled = true; }
-
-  // Call Apps Script to update Sheets
-  // Fire and forget to Apps Script (no-cors = no response needed)
-  fetch(SCRIPT_URL+'?action=valider_commande&commande='+encodeURIComponent(id)+'&token='+SECRET_TOKEN, {
-    method: 'GET',
-    mode: 'no-cors'
-  }).catch(function(){});
-  
-  // Mark validated immediately
-  validated[id] = true;
-  setSyncStatus('Commande '+id+' validée — stocks mis à jour', true);
+  validated[id]=true;
   var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
   var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
   renderPicker(id,sorted);
-  setTimeout(function(){ loadAll(); }, 4000);
 }
 
 function renderPicker(id,sorted){
-  window['_sorted_'+id]=sorted; // store for AI check
+  window['_pd_'+id]=sorted;
   var st=picks[id]||sorted.map(function(){return false;});
   var total=sorted.reduce(function(a,x){return a+(parseFloat(x['Quantité'])||0);},0);
   var doneBt=sorted.reduce(function(a,x,i){return a+(st[i]?(parseFloat(x['Quantité'])||0):0);},0);
