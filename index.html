@@ -325,24 +325,34 @@ function loadAll() {
       if (rows[i]['Référence'] !== undefined || rows[i][''] === 'Référence') { hdrIdx = i; break; }
     }
     // Filter real stock rows
-    STOCKS = rows.filter(function(r) {
+    var liveStocks = rows.filter(function(r) {
       var ref = r['Référence'] || r[''] || '';
       return typeof ref === 'string' && ref.match(/^PE-/);
     });
-    // Compute Stock Réel
-    STOCKS.forEach(function(s) {
-      var ini = parseFloat(s['Stock Initial']) || 0;
-      var out = parseFloat(s['Stock Sorti']) || 0;
-      s['_stockReel'] = ini - out;
-    });
+    // Only replace embedded data if we got real rows
+    if (liveStocks.length > 0) {
+      STOCKS = liveStocks;
+      STOCKS.forEach(function(s) {
+        var ini = parseFloat(s['Stock Initial']) || 0;
+        var out = parseFloat(s['Stock Sorti']) || 0;
+        s['_stockReel'] = ini - out;
+      });
+      setSyncStatus('Synchronisé depuis Google Sheets', true);
+    } else {
+      // Keep embedded data, sheet parse returned nothing useful
+      setSyncStatus('Données locales — Sheet non lisible', null);
+    }
     done();
   });
   fetchSheet('Commandes', function(rows) {
     if (!rows) { done(); return; }
-    CMDS = rows.filter(function(r) {
+    var liveCmds = rows.filter(function(r) {
       var id = r['N° Commande'] || r['Commande'] || '';
       return typeof id === 'string' && id.match(/^CMD-/);
     });
+    if (liveCmds.length > 0) {
+      CMDS = liveCmds;
+    }
     done();
   });
 }
