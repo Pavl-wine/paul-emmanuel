@@ -253,6 +253,7 @@ td.right{text-align:right;}td.center{text-align:center;}td.bold{font-weight:600;
 
 <script>
 var SHEET_ID = '1znLTLaJgzwUEo-mymIeo708_n3ri8sNiTt7TJevFxKE';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwPQjW-6LUMw5gQdn3K70_dfkGVHT-Mv29SZPNGmD1NZTodTcidPgIDzkzJIqwkkVw/exec';
 var STOCKS = [], CMDS = [];
 var role = 'pilotage';
 var picks = {}, validated = {}, photoData = {};
@@ -304,58 +305,39 @@ function setSyncStatus(msg, ok) {
 
 function loadAll() {
   setSyncStatus('Synchronisation en cours...', null);
-  var loaded = 0;
-  function done() {
-    loaded++;
-    if (loaded === 2) {
+  fetch(SCRIPT_URL + '?action=data')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (!data.success) { throw new Error('Script error'); }
+      
+      // Update stocks if we got real data
+      if (data.stocks && data.stocks.length > 0) {
+        STOCKS = data.stocks;
+        STOCKS.forEach(function(s){
+          var ini = parseFloat(s['Stock Initial']) || 0;
+          var out = parseFloat(s['Stock Sorti']) || 0;
+          s['_stockReel'] = ini - out;
+        });
+      }
+      
+      // Update commandes if we got real data
+      if (data.commandes && data.commandes.length > 0) {
+        CMDS = data.commandes;
+      }
+      
       lastSync = new Date();
-      setSyncStatus('Synchronisé — ' + lastSync.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}), true);
+      setSyncStatus('Synchronise — ' + lastSync.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}), true);
       initStocks();
       initCmds();
-    }
-  }
-  fetchSheet('Catalogue & Stocks', function(rows) {
-    if (!rows) {
-      setSyncStatus('Mode hors-ligne — données embarquées du dernier import', false);
-      return;
-    }
-    // Find header row
-    var hdrIdx = -1;
-    for (var i = 0; i < Math.min(rows.length, 5); i++) {
-      if (rows[i]['Référence'] !== undefined || rows[i][''] === 'Référence') { hdrIdx = i; break; }
-    }
-    // Filter real stock rows
-    var liveStocks = rows.filter(function(r) {
-      var ref = r['Référence'] || r[''] || '';
-      return typeof ref === 'string' && ref.match(/^PE-/);
+    })
+    .catch(function(err){
+      setSyncStatus('Mode local — cliquez Actualiser pour synchroniser', false);
+      // Keep embedded data
+      initStocks();
+      initCmds();
     });
-    // Only replace embedded data if we got real rows
-    if (liveStocks.length > 0) {
-      STOCKS = liveStocks;
-      STOCKS.forEach(function(s) {
-        var ini = parseFloat(s['Stock Initial']) || 0;
-        var out = parseFloat(s['Stock Sorti']) || 0;
-        s['_stockReel'] = ini - out;
-      });
-      setSyncStatus('Synchronisé depuis Google Sheets', true);
-    } else {
-      // Keep embedded data, sheet parse returned nothing useful
-      setSyncStatus('Données locales — Sheet non lisible', null);
-    }
-    done();
-  });
-  fetchSheet('Commandes', function(rows) {
-    if (!rows) { done(); return; }
-    var liveCmds = rows.filter(function(r) {
-      var id = r['N° Commande'] || r['Commande'] || '';
-      return typeof id === 'string' && id.match(/^CMD-/);
-    });
-    if (liveCmds.length > 0) {
-      CMDS = liveCmds;
-    }
-    done();
-  });
 }
+
 
 /* ── Nav ── */
 function goTo(p) {
@@ -677,11 +659,18 @@ function runAICheck(id){
 }
 
 function validateOrder(id){
-  validated[id]=true;
-  var lines=CMDS.filter(function(x){return (x['N° Commande']||x['Commande'])===id;});
-  var sorted=lines.slice().sort(function(a,b){return (a['Emplacement']||'').localeCompare(b['Emplacement']||'');});
-  renderPicker(id,sorted);
+  fetch(SCRIPT_URL + '?action=valider_commande&commande=' + encodeURIComponent(id) + '&token=PE2026secure', {
+    mode: 'no-cors'
+  }).catch(function(){});
+  
+  validated[id] = true;
+  setSyncStatus('Commande ' + id + ' validee — stocks mis a jour', true);
+  var lines = CMDS.filter(function(x){ return (x['N° Commande']||x['Commande']) === id; });
+  var sorted = lines.slice().sort(function(a,b){ return (a['Emplacement']||'').localeCompare(b['Emplacement']||''); });
+  renderPicker(id, sorted);
+  setTimeout(function(){ loadAll(); }, 3000);
 }
+
 
 function renderPicker(id,sorted){
   window['_pd_'+id]=sorted;
