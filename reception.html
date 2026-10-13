@@ -247,7 +247,7 @@ var EXTRAS  = ['Réserve'];   // zones hors étagères (caisses au sol, palette.
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwPQjW-6LUMw5gQdn3K70_dfkGVHT-Mv29SZPNGmD1NZTodTcidPgIDzkzJIqwkkVw/exec';
 var TOKEN = 'PE2026secure';
 
-var STOCKS = [], CMDS = [], EMPL = [];
+var STOCKS = [], CMDS = [], EMPL = [], ACHATS = [];
 var view = 'arrivage';
 var LINES = { arrivage: [], existant: [] };
 var active = { arrivage: -1, existant: -1 };
@@ -316,7 +316,8 @@ function loadAll() {
       STOCKS = (d.stocks || []).map(stockObj).filter(function(s) { return /^PE-/.test(s.ref); });
       CMDS = (d.commandes || []).map(cmdObj);
       EMPL = d.emplacements || [];
-      if (!d.emplacements) setSync('Script non redéployé — la carte des emplacements est indisponible', false);
+      ACHATS = d.achats || [];
+      if (!d.emplacements || !d.achats) setSync('Script non redéployé — Achats ou emplacements indisponibles', false);
       else setSync('Synchronisé — ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), true);
       var dl = document.getElementById('dl-pays'), pays = {};
       STOCKS.forEach(function(s) { if (s.pays) pays[s.pays] = 1; });
@@ -357,54 +358,63 @@ function render() {
   renderFoot();
 }
 
-/* ═══════════ ARRIVAGE ═══════════ */
-function expectedGroups() {
-  var g = {};
-  CMDS.forEach(function(c) {
-    if (c.suivi !== 'En attente fournisseur') return;
-    var k = norm(c.prod) + '|' + norm(c.cuvee) + '|' + norm(c.mil) + '|' + norm(c.format);
-    // Fournisseur non renseigné → on considère l'achat direct au domaine
-    if (!g[k]) g[k] = { key: k, ref: c.ref, producteur: c.prod, cuvee: c.cuvee, region: c.region, pays: c.pays, couleur: c.couleur, millesime: c.mil, format: c.format, fourn: c.fourn || c.prod, attendu: 0, clients: [] };
-    g[k].attendu += c.qte;
-    if (c.client && g[k].clients.indexOf(c.client) < 0) g[k].clients.push(c.client);
-    if (!g[k].ref && c.ref) g[k].ref = c.ref;
+/* ═══════════ ARRIVAGE (source : onglet Achats) ═══════════ */
+// Rapproche une ligne d'achat d'une référence du catalogue :
+// même millésime + cuvée et domaine qui se recoupent (l'un contient l'autre).
+// Comparaison tolérante : sans accents, tirets ni ponctuation ("Vosne Romanée" = "Vosne-Romanée")
+function mk(s) { return norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function matchStock(a) {
+  var c = mk(a.cuvee), d = mk(a.domaine), m = mk(a.mil);
+  if (/^pe /.test(c)) { var byRef = stockByRef(a.cuvee.trim()); if (byRef) return byRef; }
+  var hits = STOCKS.filter(function(s) {
+    var sc = mk(s.cuvee), sp = mk(s.prod), sm = mk(s.mil);
+    if (sm !== m) return false;
+    var cuvOk = sc && c && (sc === c || sc.indexOf(c) >= 0 || c.indexOf(sc) >= 0);
+    var domOk = !d || !sp || sp === d || sp.indexOf(d) >= 0 || d.indexOf(sp) >= 0;
+    return cuvOk && domOk;
   });
-  return Object.keys(g).map(function(k) { return g[k]; });
+  return hits.length === 1 ? hits[0] : null;
+}
+function achatsPending() {
+  return ACHATS.map(function(a) {
+    var s = matchStock(a);
+    return { key: 'a' + a.row, achatRow: a.row, ref: s ? s.ref : '', producteur: s ? s.prod : a.domaine, cuvee: s ? s.cuvee : a.cuvee,
+      region: s ? s.region : (a.region || ''), pays: s ? s.pays : (a.pays || ''), couleur: s ? s.couleur : (a.couleur || ''), millesime: s ? s.mil : a.mil, format: s ? s.format : a.format,
+      domaine: a.domaine, fourn: a.fourn, periode: a.periode, attendu: a.qte - a.recu, dejaRecu: a.recu, notes: a.notes };
+  });
 }
 function lineIndexByKey(key) { var L = LINES.arrivage; for (var i = 0; i < L.length; i++) if (L[i].key === key) return i; return -1; }
 
 function renderArrivage() {
-  var exp = expectedGroups();
-  var fourns = {};
-  exp.forEach(function(e) { fourns[e.fourn] = 1; });
+  var exp = achatsPending();
+  var doms = {};
+  exp.forEach(function(e) { doms[e.domaine || '—'] = 1; });
   var expShown = exp.filter(function(e) {
-    if (fournFilter && e.fourn !== fournFilter) return false;
-    if (expQ && norm(e.producteur + ' ' + e.cuvee + ' ' + e.ref + ' ' + e.fourn).indexOf(norm(expQ)) < 0) return false;
+    if (fournFilter && (e.domaine || '—') !== fournFilter) return false;
+    if (expQ && norm(e.domaine + ' ' + e.cuvee + ' ' + e.ref + ' ' + e.fourn + ' ' + e.millesime).indexOf(norm(expQ)) < 0) return false;
     return lineIndexByKey(e.key) < 0;
-  }).sort(function(a, b) { return (a.producteur + a.cuvee).localeCompare(b.producteur + b.cuvee); });
+  }).sort(function(a, b) { return (a.domaine + a.cuvee).localeCompare(b.domaine + b.cuvee); });
 
   var L = LINES.arrivage, totRecu = L.reduce(function(a, l) { return a + l.qte; }, 0);
   var h = '<div class="hdr"><div><h2>Arrivage</h2><p>1. Cochez ce qui est arrivé · 2. Rangez chaque référence sur la carte · 3. Validez</p></div>'
     + '<div><div class="hdr-n">' + totRecu + '</div><div class="hdr-l">bouteilles reçues</div></div></div>';
 
   h += '<div class="layout"><div>';
-  // Lignes reçues
   h += '<div class="sec">Reçu sur cette palette (' + L.length + ')</div>';
-  if (!L.length) h += '<div class="card muted">Rien pour l\'instant. Ajoutez les références arrivées depuis la liste « Attendu » ci-dessous, ou une bouteille hors commande.</div>';
+  if (!L.length) h += '<div class="card muted">Rien pour l\'instant. Choisissez dans « À recevoir » ce qui vient d\'arriver.</div>';
   L.forEach(function(l, i) { h += lineCard(l, i, 'arrivage'); });
-  h += '<button class="btn" style="width:100%;margin:4px 0 6px" onclick="openAdd()">+ Bouteille hors commande</button>';
+  h += '<button class="btn" style="width:100%;margin:4px 0 6px" onclick="openAdd(-1)">+ Bouteille non prévue dans les achats</button>';
 
-  // Attendus
-  h += '<div class="sec">Attendu chez les fournisseurs</div>';
-  h += '<div class="fbar"><select class="fi" onchange="fournFilter=this.value;renderArrivage()"><option value="">Tous les fournisseurs</option>'
-    + Object.keys(fourns).sort().map(function(f) { return '<option' + (f === fournFilter ? ' selected' : '') + '>' + he(f) + '</option>'; }).join('')
-    + '</select><input class="fi" style="flex:1;min-width:140px" placeholder="Rechercher..." value="' + he(expQ) + '" oninput="expQ=this.value;renderArrivage();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div>';
-  if (!expShown.length) h += '<div class="card muted">Aucune bouteille en attente fournisseur' + (fournFilter || expQ ? ' pour ce filtre' : '') + '.</div>';
+  h += '<div class="sec">À recevoir — onglet Achats (' + exp.length + ')</div>';
+  h += '<div class="fbar"><select class="fi" style="max-width:55%" onchange="fournFilter=this.value;renderArrivage()"><option value="">Tous les domaines</option>'
+    + Object.keys(doms).sort().map(function(f) { return '<option' + (f === fournFilter ? ' selected' : '') + '>' + he(f) + '</option>'; }).join('')
+    + '</select><input class="fi" style="flex:1;min-width:120px" placeholder="Rechercher..." value="' + he(expQ) + '" oninput="expQ=this.value;renderArrivage();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div>';
+  if (!expShown.length) h += '<div class="card muted">' + (fournFilter || expQ ? 'Rien pour ce filtre.' : 'Aucun achat en attente de réception. Les nouveaux achats saisis dans l\'onglet Achats apparaîtront ici.') + '</div>';
   expShown.forEach(function(e) {
-    h += '<div class="card"><div class="l-top"><div><div class="l-name">' + he(e.cuvee || e.producteur) + '</div>'
-      + '<div class="l-sub">' + he(e.producteur) + (e.millesime ? ' · ' + he(e.millesime) : '') + ' · ' + he(e.format) + '</div>'
-      + '<div class="l-sub">Fournisseur : <b>' + he(e.fourn) + '</b></div></div>'
-      + '<div style="text-align:right"><div class="l-name">' + e.attendu + ' bt</div><div class="l-sub">attendu</div></div></div>'
+    h += '<div class="card"><div class="l-top"><div><div class="l-name">' + he(e.cuvee) + '</div>'
+      + '<div class="l-sub"><b>' + he(e.domaine) + '</b>' + (e.millesime ? ' · ' + he(e.millesime) : '') + ' · ' + he(e.format) + (e.periode ? ' · achat ' + he(e.periode) : '') + '</div>'
+      + '<div class="l-sub">' + (e.ref ? '<span class="l-ref">' + he(e.ref) + '</span> déjà au catalogue' : '<span class="l-ref">nouvelle réf</span> sera créée à la réception') + (e.fourn ? ' · ' + he(e.fourn) : '') + '</div></div>'
+      + '<div style="text-align:right"><div class="l-name">' + e.attendu + ' bt</div><div class="l-sub">' + (e.dejaRecu ? 'reste (' + e.dejaRecu + ' déjà reçues)' : 'attendu') + '</div></div></div>'
       + '<div class="l-row"><button class="btn btn-w" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button>'
       + '<button class="btn" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div>';
   });
@@ -413,23 +423,26 @@ function renderArrivage() {
 }
 
 function receive(key, conforme) {
-  var e = expectedGroups().filter(function(x) { return x.key === key; })[0];
+  var e = achatsPending().filter(function(x) { return x.key === key; })[0];
   if (!e) return;
   var q = e.attendu;
   if (!conforme) {
-    var s = prompt('Combien de bouteilles reçues pour « ' + (e.cuvee || e.producteur) + ' » ? (attendu : ' + e.attendu + ')', e.attendu);
+    var s = prompt('Combien de bouteilles reçues pour « ' + e.cuvee + ' » ? (attendu : ' + e.attendu + ')', e.attendu);
     if (s === null) return;
     q = Math.max(0, Math.round(num(s)));
     if (!q) { toast('Rien de reçu — ligne ignorée'); return; }
   }
-  LINES.arrivage.push({ key: e.key, ref: e.ref, producteur: e.producteur, cuvee: e.cuvee, region: e.region, pays: e.pays, couleur: e.couleur, millesime: e.millesime, format: e.format, fourn: e.fourn, attendu: e.attendu, clients: e.clients, qte: q, rangement: [] });
+  var l = JSON.parse(JSON.stringify(e)); l.qte = q; l.rangement = [];
+  LINES.arrivage.push(l);
   active.arrivage = LINES.arrivage.length - 1;
   render(); showMapOnPhone();
 }
 
-/* Ajout hors commande */
-function openAdd() {
-  document.getElementById('add-q').value = '';
+/* Ajout non prévu, ou changement de la référence associée à une ligne (relinkIdx ≥ 0) */
+var relinkIdx = -1;
+function openAdd(i) {
+  relinkIdx = (typeof i === 'number') ? i : -1;
+  document.getElementById('add-q').value = relinkIdx >= 0 ? (LINES.arrivage[relinkIdx].cuvee || '') : '';
   ['n-prod', 'n-cuvee', 'n-region', 'n-pays', 'n-mil', 'n-fourn'].forEach(function(id) { document.getElementById(id).value = ''; });
   searchAdd();
   document.getElementById('ov-add').classList.add('on');
@@ -449,8 +462,13 @@ function askQty(label) {
 }
 function addExisting(ref) {
   var s = stockByRef(ref); if (!s) return;
+  if (relinkIdx >= 0) {
+    var l = LINES.arrivage[relinkIdx];
+    l.ref = s.ref; l.producteur = s.prod; l.cuvee = s.cuvee; l.region = s.region; l.pays = s.pays; l.couleur = s.couleur; l.millesime = s.mil; l.format = s.format;
+    relinkIdx = -1; closeOv('ov-add'); render(); return;
+  }
   var q = askQty(s.cuvee || s.prod); if (!q) return;
-  LINES.arrivage.push({ key: 'x-' + newId(), ref: s.ref, producteur: s.prod, cuvee: s.cuvee, region: s.region, pays: s.pays, couleur: s.couleur, millesime: s.mil, format: s.format, fourn: '', attendu: 0, clients: [], qte: q, rangement: [] });
+  LINES.arrivage.push({ key: 'x-' + newId(), ref: s.ref, producteur: s.prod, cuvee: s.cuvee, region: s.region, pays: s.pays, couleur: s.couleur, millesime: s.mil, format: s.format, fourn: '', attendu: 0, qte: q, rangement: [] });
   active.arrivage = LINES.arrivage.length - 1;
   closeOv('ov-add'); render(); showMapOnPhone();
 }
@@ -458,18 +476,29 @@ function addNew() {
   var g = function(id) { return document.getElementById(id).value.trim(); };
   if (!g('n-prod') || !g('n-cuvee')) { toast('Producteur et cuvée obligatoires', true); return; }
   if (!g('n-pays')) { toast('Le pays sert à créer la référence', true); return; }
+  if (relinkIdx >= 0) {
+    var l = LINES.arrivage[relinkIdx];
+    l.ref = ''; l.producteur = g('n-prod'); l.cuvee = g('n-cuvee'); l.region = g('n-region'); l.pays = g('n-pays'); l.couleur = g('n-couleur'); l.millesime = g('n-mil'); l.format = g('n-format');
+    relinkIdx = -1; closeOv('ov-add'); render(); return;
+  }
   var q = askQty(g('n-cuvee')); if (!q) return;
-  LINES.arrivage.push({ key: 'n-' + newId(), ref: '', producteur: g('n-prod'), cuvee: g('n-cuvee'), region: g('n-region'), pays: g('n-pays'), couleur: g('n-couleur'), millesime: g('n-mil'), format: g('n-format'), fourn: g('n-fourn'), attendu: 0, clients: [], qte: q, rangement: [], isNew: true });
+  LINES.arrivage.push({ key: 'n-' + newId(), ref: '', producteur: g('n-prod'), cuvee: g('n-cuvee'), region: g('n-region'), pays: g('n-pays'), couleur: g('n-couleur'), millesime: g('n-mil'), format: g('n-format'), fourn: g('n-fourn'), attendu: 0, qte: q, rangement: [] });
   active.arrivage = LINES.arrivage.length - 1;
   closeOv('ov-add'); render(); showMapOnPhone();
 }
+function setField(i, f, v) { var l = LINES[view][i]; if (l) { l[f] = v.trim(); renderFoot(); } }
+function needsInfo(l) { return false; }  // les infos vin viennent de l'onglet Achats, pas d'Evelyne
 
 /* Carte d'une ligne (commune aux deux modes) */
 function lineCard(l, i, mode) {
   var placed = placedOf(l), reste = l.qte - placed, isAct = active[mode] === i;
   var ec = '';
   if (mode === 'arrivage' && l.attendu) ec = l.qte === l.attendu ? '<span class="ecart e-ok">conforme</span>' : '<span class="ecart e-ko">écart ' + (l.qte - l.attendu > 0 ? '+' : '') + (l.qte - l.attendu) + '</span>';
-  if (mode === 'arrivage' && !l.attendu) ec = '<span class="ecart e-ko">hors commande</span>';
+  if (mode === 'arrivage' && !l.attendu) ec = '<span class="ecart e-ko">non prévu</span>';
+  var info = '';
+  if (mode === 'arrivage') {
+    info = '<div class="l-row" onclick="event.stopPropagation()"><button class="btn" style="padding:4px 9px;font-size:11px" onclick="openAdd(' + i + ')">' + (l.ref ? 'Pas la bonne réf ?' : 'Déjà au catalogue ?') + '</button></div>';
+  }
   var chips = (l.rangement || []).map(function(r, j) {
     return '<span class="chip">' + he(r.emp) + ' × ' + r.qte + '<button onclick="event.stopPropagation();unplace(' + i + ',' + j + ')">×</button></span>';
   }).join(' ');
@@ -481,6 +510,7 @@ function lineCard(l, i, mode) {
     + (mode === 'arrivage' ? '<span class="muted">Reçu</span><input class="qin" type="number" min="0" value="' + l.qte + '" onclick="event.stopPropagation()" onchange="setQte(' + i + ',this.value)">' + ec
                             : '<span class="muted">À ranger</span><input class="qin" type="number" min="0" value="' + l.qte + '" onclick="event.stopPropagation()" onchange="setQte(' + i + ',this.value)"><span class="muted">sur ' + l.max + ' non localisées</span>')
     + '</div>'
+    + info
     + '<div class="l-row">' + chips + '<span class="reste ' + (reste === 0 ? 'r-ok' : 'r-ko') + '">' + (reste === 0 ? '✓ tout est rangé' : (reste > 0 ? reste + ' à ranger' : (-reste) + ' de trop')) + '</span></div>'
     + (isAct && reste > 0 ? '<div class="l-sub" style="margin-top:6px;color:#6b2737;font-weight:600">→ Touchez un emplacement sur la carte</div>' : '')
     + '</div>';
@@ -655,22 +685,25 @@ function renderFoot() {
   foot.style.display = LINES[view].length ? 'flex' : 'none';
   var bt = L.reduce(function(a, l) { return a + l.qte; }, 0);
   var notDone = L.filter(function(l) { return placedOf(l) !== l.qte; });
+  var incompl = view === 'arrivage' ? L.filter(needsInfo) : [];
   info.innerHTML = '<b>' + L.length + '</b> référence' + (L.length > 1 ? 's' : '') + ' · <b>' + bt + '</b> bt'
-    + (notDone.length ? ' · <span style="color:#854f0b;font-weight:600">' + notDone.length + ' encore à ranger</span>' : ' · <span style="color:#27500a;font-weight:600">tout est rangé</span>');
+    + (notDone.length ? ' · <span style="color:#854f0b;font-weight:600">' + notDone.length + ' encore à ranger</span>' : ' · <span style="color:#27500a;font-weight:600">tout est rangé</span>')
+    + (incompl.length ? ' · <span style="color:#791f1f;font-weight:600">pays/couleur à compléter</span>' : '');
   btn.textContent = sending ? 'Envoi...' : (view === 'arrivage' ? 'Valider la réception' : 'Valider le rangement');
-  btn.disabled = sending || !L.length || notDone.length > 0;
+  btn.disabled = sending || !L.length || notDone.length > 0 || incompl.length > 0;
 }
 function valider() {
   var L = LINES[view].filter(function(l) { return l.qte > 0; });
   if (!L.length || sending) return;
+  if (view === 'arrivage' && L.some(needsInfo)) { toast('Complétez pays et couleur des nouvelles références', true); return; }
   var bt = L.reduce(function(a, l) { return a + l.qte; }, 0);
   var ecarts = view === 'arrivage' ? L.filter(function(l) { return l.attendu && l.qte !== l.attendu; }).length : 0;
-  var msg = (view === 'arrivage' ? 'Entrer en stock ' : 'Localiser ') + bt + ' bouteilles (' + L.length + ' réf.)' + (ecarts ? '\n' + ecarts + ' écart(s) avec la commande fournisseur seront notés.' : '') + '\n\nConfirmer ?';
+  var msg = (view === 'arrivage' ? 'Entrer en stock ' : 'Localiser ') + bt + ' bouteilles (' + L.length + ' réf.)' + (ecarts ? '\n' + ecarts + ' écart(s) avec l\'achat seront notés.' : '') + '\n\nConfirmer ?';
   if (!confirm(msg)) return;
   var payload = {
     id: rcId[view], mode: view === 'arrivage' ? 'reception' : 'rangement',
     lignes: L.map(function(l) {
-      return { ref: l.ref || '', producteur: l.producteur, cuvee: l.cuvee, region: l.region, pays: l.pays, couleur: l.couleur, millesime: l.millesime, format: l.format, fourn: l.fourn || '', attendu: l.attendu || 0, qte: l.qte, rangement: l.rangement };
+      return { ref: l.ref || '', producteur: l.producteur, cuvee: l.cuvee, region: l.region, pays: l.pays, couleur: l.couleur, millesime: l.millesime, format: l.format, fourn: l.domaine || l.fourn || '', achatRow: l.achatRow || 0, attendu: l.attendu || 0, qte: l.qte, rangement: l.rangement };
     })
   };
   sending = true; renderFoot();
