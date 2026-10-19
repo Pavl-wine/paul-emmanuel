@@ -144,7 +144,7 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
     <div class="tab active" id="t-arrivage" onclick="setView('arrivage')">Arrivage</div>
     <div class="tab" id="t-existant" onclick="setView('existant')">Ranger l'existant</div>
     <div class="tab" id="t-carte" onclick="setView('carte')">Carte de la cave</div>
-    <a class="tab" href="file:///Users/paulpatacq/Library/Application%20Support/Claude/local-agent-mode-sessions/008cb7a0-d610-4aa9-bff0-d2323e2b76c3/e817610f-c083-43c1-8548-cdc739049ca6/local_88d543e2-2306-4684-90f7-73d4250e9b80/outputs/index.html" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes →</a>
+    <a class="tab" href="index.html" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes →</a>
   </div>
 </nav>
 
@@ -363,30 +363,6 @@ function render() {
 // même millésime + cuvée et domaine qui se recoupent (l'un contient l'autre).
 // Comparaison tolérante : sans accents, tirets ni ponctuation ("Vosne Romanée" = "Vosne-Romanée")
 function mk(s) { return norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
-function commandesPending() {
-  var achRefs = {};
-  achatsPending().forEach(function(e) { if (e.ref) achRefs[e.ref] = 1; });
-  var byRef = {};
-  CMDS.forEach(function(c) {
-    if (!c.ref) return;
-    if (/^SORTIE-/.test(c.id)) return;
-    var st = norm(c.suivi);
-    if (st.indexOf('attente') < 0 && st.indexOf('cours') < 0) return;
-    if (achRefs[c.ref]) return;
-    var o = byRef[c.ref];
-    if (!o) { o = byRef[c.ref] = { ref: c.ref, prod: c.prod, cuvee: c.cuvee, region: c.region, pays: c.pays, couleur: c.couleur, millesime: c.mil, format: c.format, qte: 0, cl: {} }; }
-    o.qte += c.qte; if (c.client) o.cl[c.client] = 1;
-  });
-  return Object.keys(byRef).map(function(r) {
-    var o = byRef[r], s = stockByRef(r);
-    return { key: 'c' + r, achatRow: 0, ref: r,
-      producteur: o.prod || (s ? s.prod : ''), cuvee: o.cuvee || (s ? s.cuvee : ''), region: o.region || (s ? s.region : ''),
-      pays: o.pays || (s ? s.pays : ''), couleur: o.couleur || (s ? s.couleur : ''), millesime: o.millesime || (s ? s.mil : ''),
-      format: o.format || (s ? s.format : '75cl'), domaine: o.prod || (s ? s.prod : ''), fourn: '', periode: '',
-      attendu: o.qte, dejaRecu: 0, notes: '', clients: Object.keys(o.cl).join(', ') };
-  });
-}
-
 function matchStock(a) {
   var c = mk(a.cuvee), d = mk(a.domaine), m = mk(a.mil);
   if (/^pe /.test(c)) { var byRef = stockByRef(a.cuvee.trim()); if (byRef) return byRef; }
@@ -442,31 +418,12 @@ function renderArrivage() {
       + '<div class="l-row"><button class="btn btn-w" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button>'
       + '<button class="btn" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div>';
   });
-  var cmdP = (typeof commandesPending === 'function') ? commandesPending() : [];
-  var cmdShown = cmdP.filter(function(e) {
-    if (expQ && norm(e.domaine + ' ' + e.cuvee + ' ' + e.ref + ' ' + e.millesime + ' ' + (e.clients || '')).indexOf(norm(expQ)) < 0) return false;
-    return lineIndexByKey(e.key) < 0;
-  }).sort(function(a, b) { return (a.domaine + a.cuvee).localeCompare(b.domaine + b.cuvee); });
-  if (cmdP.length) {
-    h += '<div class="sec">\u00c0 recevoir \u2014 commandes sans facture (' + cmdP.length + ')</div>';
-    if (!cmdShown.length) h += '<div class="card muted">Rien pour ce filtre.</div>';
-    cmdShown.forEach(function(e) {
-      h += '<div class="card"><div class="l-top"><div><div class="l-name">' + he(e.cuvee) + '</div>'
-        + '<div class="l-sub"><b>' + he(e.producteur) + '</b>' + (e.millesime ? ' \u00b7 ' + he(e.millesime) : '') + ' \u00b7 ' + he(e.format) + '</div>'
-        + '<div class="l-sub"><span class="l-ref">' + he(e.ref) + '</span>' + (e.clients ? ' \u00b7 ' + he(e.clients) : '') + '</div></div>'
-        + '<div style="text-align:right"><div class="l-name">' + e.attendu + ' bt</div><div class="l-sub">command\u00e9</div></div></div>'
-        + '<div class="l-row"><button class="btn btn-w" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,true)">\u2713 Re\u00e7u conforme</button>'
-        + '<button class="btn" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,false)">Re\u00e7u avec \u00e9cart</button></div></div>';
-    });
-  }
   h += '</div><div>' + mapPanel() + '</div></div>';
   document.getElementById('page').innerHTML = h;
 }
 
 function receive(key, conforme) {
-  var pool = achatsPending();
-  if (typeof commandesPending === 'function') pool = pool.concat(commandesPending());
-  var e = pool.filter(function(x) { return x.key === key; })[0];
+  var e = achatsPending().filter(function(x) { return x.key === key; })[0];
   if (!e) return;
   var q = e.attendu;
   if (!conforme) {
