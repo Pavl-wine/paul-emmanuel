@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0227)file:///Users/paulpatacq/Library/Application%20Support/Claude/local-agent-mode-sessions/008cb7a0-d610-4aa9-bff0-d2323e2b76c3/e817610f-c083-43c1-8548-cdc739049ca6/local_88d543e2-2306-4684-90f7-73d4250e9b80/outputs/reception.html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Paul Emmanuel — Réception & rangement</title>
+<title>Paul Emmanuel — Réception &amp; rangement</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:14px;}
@@ -133,8 +133,8 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
 <body>
 
 <div class="sync-bar">
-  <div class="sync-dot" id="sync-dot"></div>
-  <span id="sync-status">Connexion à Google Sheets...</span>
+  <div class="sync-dot" id="sync-dot" style="background: rgb(151, 196, 89);"></div>
+  <span id="sync-status">Synchronisé — 15:49</span>
   <button class="refresh-btn" onclick="loadAll()" style="margin-left:auto">Actualiser</button>
 </div>
 
@@ -144,15 +144,15 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
     <div class="tab active" id="t-arrivage" onclick="setView('arrivage')">Arrivage</div>
     <div class="tab" id="t-existant" onclick="setView('existant')">Ranger l'existant</div>
     <div class="tab" id="t-carte" onclick="setView('carte')">Carte de la cave</div>
-    <a class="tab" href="index.html" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes →</a>
+    <a class="tab" href="file:///Users/paulpatacq/Library/Application%20Support/Claude/local-agent-mode-sessions/008cb7a0-d610-4aa9-bff0-d2323e2b76c3/e817610f-c083-43c1-8548-cdc739049ca6/local_88d543e2-2306-4684-90f7-73d4250e9b80/outputs/index.html" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes →</a>
   </div>
 </nav>
 
-<div class="page" id="page"></div>
+<div class="page" id="page"><div class="hdr"><div><h2>Arrivage</h2><p>1. Cochez ce qui est arrivé · 2. Rangez chaque référence sur la carte · 3. Validez</p></div><div><div class="hdr-n">0</div><div class="hdr-l">bouteilles reçues</div></div></div><div class="layout"><div><div class="sec">Reçu sur cette palette (0)</div><div class="card muted">Rien pour l'instant. Choisissez dans « À recevoir » ce qui vient d'arriver.</div><button class="btn" style="width:100%;margin:4px 0 6px" onclick="openAdd(-1)">+ Bouteille non prévue dans les achats</button><div class="sec">À recevoir — onglet Achats (8)</div><div class="fbar"><select class="fi" style="max-width:55%" onchange="fournFilter=this.value;renderArrivage()"><option value="">Tous les domaines</option><option>Maxime Dubuet Boillot</option><option>Palacios Rioja</option></select><input class="fi" style="flex:1;min-width:120px" placeholder="Rechercher..." value="" oninput="expQ=this.value;renderArrivage();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div><div class="card"><div class="l-top"><div><div class="l-name">Aligoté Doré</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">18 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a390" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a390" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Beaune "Grand Coeur"</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">12 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a391" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a391" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Pommard "Les Deux Terroirs"</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">6 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a392" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a392" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Pommard 1er Cru "Les Chanlins-Bas"</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">1 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a393" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a393" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Volnay "Les Vieilles Vignes" - 2023</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">8 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a394" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a394" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Volnay "Sur-Roches" Vendange Entière - 2023</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">6 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a396" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a396" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Volnay 1er Cru "Carelle sous la Chapelle" - 2023</div><div class="l-sub"><b>Maxime Dubuet Boillot</b> · 2023 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">nouvelle réf</span> sera créée à la réception · Maxime Dubuet Boillot</div></div><div style="text-align:right"><div class="l-name">14 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a395" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a395" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div><div class="card"><div class="l-top"><div><div class="l-name">Propiedad de Yerga</div><div class="l-sub"><b>Palacios Rioja</b> · 2024 · 75cl · achat 10/2026</div><div class="l-sub"><span class="l-ref">PE-ESP-19</span> déjà au catalogue · Valade</div></div><div style="text-align:right"><div class="l-name">6 bt</div><div class="l-sub">attendu</div></div></div><div class="l-row"><button class="btn btn-w" data-k="a397" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button><button class="btn" data-k="a397" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div></div><div><div class="map-wrap"><div class="map-title"><b style="color:#3d1020">Carte de la cave</b></div><div class="map" style="grid-template-columns:62px repeat(5,1fr)"><div></div><div class="mh">Étagère 1</div><div class="mh">Étagère 2</div><div class="mh">Étagère 3</div><div class="mh">Étagère 4</div><div class="mh">Étagère 5</div><div class="mlab">Haut</div><div class="cell empty-c" data-c="1-Haut" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>1-Haut</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell" data-c="2-Haut" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>2-Haut</span><span class="c-bt">9 bt</span></div><div class="c-w">6 · Bourgogne Aligoté Sous Châtelet 2023</div><div class="c-w">2 · Le Clos Rouge 2019</div><div class="c-w">1 · Le Clos Integrale 2023</div></div><div class="cell empty-c" data-c="3-Haut" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>3-Haut</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell" data-c="4-Haut" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>4-Haut</span><span class="c-bt">1 bt</span></div><div class="c-w">1 · Riserva 2019</div></div><div class="cell" data-c="5-Haut" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>5-Haut</span><span class="c-bt">15 bt</span></div><div class="c-w">6 · Hill of Grace 2019</div><div class="c-w">6 · Basket Press 2019</div><div class="c-w">3 · 1961 Block Riesling 2020</div></div><div class="mlab">Milieu</div><div class="cell" data-c="1-Milieu" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>1-Milieu</span><span class="c-bt">10 bt</span></div><div class="c-w">4 · La Virada / Capceu  2024</div><div class="c-w">3 · Costa Blanca 2023</div><div class="c-w">2 · Iglesia Vella 2023</div><div class="c-more">+ 1 autre</div></div><div class="cell" data-c="2-Milieu" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>2-Milieu</span><span class="c-bt">12 bt</span></div><div class="c-w">12 · Schoenenbourg Grand Cru Riesling 2019</div></div><div class="cell empty-c" data-c="3-Milieu" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>3-Milieu</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell" data-c="4-Milieu" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>4-Milieu</span><span class="c-bt">7 bt</span></div><div class="c-w">3 · Tot-U 2023</div><div class="c-w">3 · Per Sé 2019</div><div class="c-w">1 · La Llera 2022</div></div><div class="cell" data-c="5-Milieu" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>5-Milieu</span><span class="c-bt">4 bt</span></div><div class="c-w">3 · Argetsinger Vineyard - Riesling - Finger Lakes 2020</div><div class="c-w">1 · Sexton Vineyard 2020</div></div><div class="mlab">Plan</div><div class="cell" data-c="1-Plan" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>1-Plan</span><span class="c-bt">19 bt</span></div><div class="c-w">9 · Beaune 1er Cru Clos du Roi 2022</div><div class="c-w">4 · Gevrey-Chambertin 1er Cru Lavaux Saint-Jacques 2022</div><div class="c-w">3 · Beaune 1er Cru Clos du Roi 2021</div><div class="c-more">+ 1 autre</div></div><div class="cell" data-c="2-Plan" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>2-Plan</span><span class="c-bt">21 bt</span></div><div class="c-w">18 · Gevrey-Chambertin Ostrea 2017</div><div class="c-w">3 · Chambertin Grand Cru 2007</div></div><div class="cell" data-c="3-Plan" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>3-Plan</span><span class="c-bt">11 bt</span></div><div class="c-w">11 · Les Parcelles Bouzy Grand Cru NM</div></div><div class="cell" data-c="4-Plan" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>4-Plan</span><span class="c-bt">11 bt</span></div><div class="c-w">6 · Soverribas  2022</div><div class="c-w">4 · Moncerbal 2020</div><div class="c-w">1 · El Carretil 2020</div></div><div class="cell" data-c="5-Plan" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>5-Plan</span><span class="c-bt">17 bt</span></div><div class="c-w">6 · The Contours - 10 Year Museum Release 2017</div><div class="c-w">5 · Freestone 2024</div><div class="c-w">3 · Calvert 2024</div><div class="c-more">+ 1 autre</div></div><div class="mlab">Bas</div><div class="cell" data-c="1-Bas" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>1-Bas</span><span class="c-bt">30 bt</span></div><div class="c-w">20 · Le Puy Émilien 2021</div><div class="c-w">4 · Léoville Barton 2022</div><div class="c-w">3 · L'Esprit de Chevalier Blanc 2021</div><div class="c-more">+ 3 autres</div></div><div class="cell" data-c="2-Bas" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>2-Bas</span><span class="c-bt">51 bt</span></div><div class="c-w">30 · Néolithik Sec 2025</div><div class="c-w">18 · Néolithik Madiran 2022</div><div class="c-w">1 · Impériale 2024</div><div class="c-more">+ 2 autres</div></div><div class="cell empty-c" data-c="3-Bas" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>3-Bas</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell" data-c="4-Bas" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>4-Bas</span><span class="c-bt">14 bt</span></div><div class="c-w">6 · Agnes - Chardonnay 2021</div><div class="c-w">4 · Peter Max - Pinot Noir 2021</div><div class="c-w">4 · Ridge 2024</div></div><div class="cell" data-c="5-Bas" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>5-Bas</span><span class="c-bt">2 bt</span></div><div class="c-w">2 · Santorini Natural Ferment 2022</div></div><div class="mlab">Sol</div><div class="cell empty-c" data-c="1-Sol" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>1-Sol</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell empty-c" data-c="2-Sol" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>2-Sol</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell empty-c" data-c="3-Sol" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>3-Sol</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell empty-c" data-c="4-Sol" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>4-Sol</span><span class="c-bt"></span></div><div class="c-more">libre</div></div><div class="cell empty-c" data-c="5-Sol" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>5-Sol</span><span class="c-bt"></span></div><div class="c-more">libre</div></div></div><div class="map" style="grid-template-columns:62px repeat(1,1fr);margin-top:6px"><div class="mlab">Autres</div><div class="cell empty-c" data-c="Réserve" onclick="tapSlot(this.dataset.c)"><div class="c-code"><span>Réserve</span><span class="c-bt"></span></div><div class="c-more">libre</div></div></div><div class="legend"><span><i class="lg" style="border-color:#3b6d11"></i>contient déjà cette référence</span><span><i class="lg" style="border-color:#6b2737;border-style:dashed"></i>rangement en cours</span></div></div></div></div></div>
 
 <div class="foot" id="foot" style="display:none">
-  <div id="foot-info" class="muted"></div>
-  <button class="vbtn" id="foot-btn" onclick="valider()">Valider</button>
+  <div id="foot-info" class="muted"><b>0</b> référence · <b>0</b> bt · <span style="color:#27500a;font-weight:600">tout est rangé</span></div>
+  <button class="vbtn" id="foot-btn" onclick="valider()" disabled="">Valider la réception</button>
 </div>
 
 <!-- Modale quantité -->
@@ -194,7 +194,7 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
         <div><label>Format</label><select class="fi" id="n-format"><option>75cl</option><option>150cl</option><option>37.5cl</option><option>300cl</option></select></div>
         <div><label>Fournisseur</label><input class="fi" id="n-fourn"></div>
       </div>
-      <datalist id="dl-pays"></datalist>
+      <datalist id="dl-pays"><option value="Afrique du Sud"></option><option value="Allemagne"></option><option value="Argentine"></option><option value="Australie"></option><option value="Espagne"></option><option value="France"></option><option value="Grece"></option><option value="Italie"></option><option value="Nouvelle-Zélande"></option><option value="Portugal"></option><option value="USA"></option></datalist>
     </div>
     <div class="box-f">
       <button class="btn" onclick="closeOv('ov-add')">Annuler</button>
@@ -363,6 +363,30 @@ function render() {
 // même millésime + cuvée et domaine qui se recoupent (l'un contient l'autre).
 // Comparaison tolérante : sans accents, tirets ni ponctuation ("Vosne Romanée" = "Vosne-Romanée")
 function mk(s) { return norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+function commandesPending() {
+  var achRefs = {};
+  achatsPending().forEach(function(e) { if (e.ref) achRefs[e.ref] = 1; });
+  var byRef = {};
+  CMDS.forEach(function(c) {
+    if (!c.ref) return;
+    if (/^SORTIE-/.test(c.id)) return;
+    var st = norm(c.suivi);
+    if (st.indexOf('attente') < 0 && st.indexOf('cours') < 0) return;
+    if (achRefs[c.ref]) return;
+    var o = byRef[c.ref];
+    if (!o) { o = byRef[c.ref] = { ref: c.ref, prod: c.prod, cuvee: c.cuvee, region: c.region, pays: c.pays, couleur: c.couleur, millesime: c.mil, format: c.format, qte: 0, cl: {} }; }
+    o.qte += c.qte; if (c.client) o.cl[c.client] = 1;
+  });
+  return Object.keys(byRef).map(function(r) {
+    var o = byRef[r], s = stockByRef(r);
+    return { key: 'c' + r, achatRow: 0, ref: r,
+      producteur: o.prod || (s ? s.prod : ''), cuvee: o.cuvee || (s ? s.cuvee : ''), region: o.region || (s ? s.region : ''),
+      pays: o.pays || (s ? s.pays : ''), couleur: o.couleur || (s ? s.couleur : ''), millesime: o.millesime || (s ? s.mil : ''),
+      format: o.format || (s ? s.format : '75cl'), domaine: o.prod || (s ? s.prod : ''), fourn: '', periode: '',
+      attendu: o.qte, dejaRecu: 0, notes: '', clients: Object.keys(o.cl).join(', ') };
+  });
+}
+
 function matchStock(a) {
   var c = mk(a.cuvee), d = mk(a.domaine), m = mk(a.mil);
   if (/^pe /.test(c)) { var byRef = stockByRef(a.cuvee.trim()); if (byRef) return byRef; }
@@ -418,12 +442,31 @@ function renderArrivage() {
       + '<div class="l-row"><button class="btn btn-w" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,true)">✓ Reçu conforme</button>'
       + '<button class="btn" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,false)">Reçu avec écart</button></div></div>';
   });
+  var cmdP = (typeof commandesPending === 'function') ? commandesPending() : [];
+  var cmdShown = cmdP.filter(function(e) {
+    if (expQ && norm(e.domaine + ' ' + e.cuvee + ' ' + e.ref + ' ' + e.millesime + ' ' + (e.clients || '')).indexOf(norm(expQ)) < 0) return false;
+    return lineIndexByKey(e.key) < 0;
+  }).sort(function(a, b) { return (a.domaine + a.cuvee).localeCompare(b.domaine + b.cuvee); });
+  if (cmdP.length) {
+    h += '<div class="sec">\u00c0 recevoir \u2014 commandes sans facture (' + cmdP.length + ')</div>';
+    if (!cmdShown.length) h += '<div class="card muted">Rien pour ce filtre.</div>';
+    cmdShown.forEach(function(e) {
+      h += '<div class="card"><div class="l-top"><div><div class="l-name">' + he(e.cuvee) + '</div>'
+        + '<div class="l-sub"><b>' + he(e.producteur) + '</b>' + (e.millesime ? ' \u00b7 ' + he(e.millesime) : '') + ' \u00b7 ' + he(e.format) + '</div>'
+        + '<div class="l-sub"><span class="l-ref">' + he(e.ref) + '</span>' + (e.clients ? ' \u00b7 ' + he(e.clients) : '') + '</div></div>'
+        + '<div style="text-align:right"><div class="l-name">' + e.attendu + ' bt</div><div class="l-sub">command\u00e9</div></div></div>'
+        + '<div class="l-row"><button class="btn btn-w" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,true)">\u2713 Re\u00e7u conforme</button>'
+        + '<button class="btn" data-k="' + he(e.key) + '" onclick="receive(this.dataset.k,false)">Re\u00e7u avec \u00e9cart</button></div></div>';
+    });
+  }
   h += '</div><div>' + mapPanel() + '</div></div>';
   document.getElementById('page').innerHTML = h;
 }
 
 function receive(key, conforme) {
-  var e = achatsPending().filter(function(x) { return x.key === key; })[0];
+  var pool = achatsPending();
+  if (typeof commandesPending === 'function') pool = pool.concat(commandesPending());
+  var e = pool.filter(function(x) { return x.key === key; })[0];
   if (!e) return;
   var q = e.attendu;
   if (!conforme) {
@@ -768,5 +811,6 @@ function confirmOut() {
 
 loadAll();
 </script>
-</body>
-</html>
+
+
+</body></html>
