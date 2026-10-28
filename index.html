@@ -37,6 +37,9 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
 .oc-cli{font-size:16px;font-weight:600;}
 .oc-bt{font-size:15px;font-weight:600;color:#6b2737;white-space:nowrap;}
 .oc-sub{font-size:12px;color:#8a7060;margin-top:3px;}
+.livr{display:inline-block;margin:8px 0 0 6px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:#f3ead6;color:#6b4a12;}
+.livr-box{background:#f3ead6;border:1px solid #e2cfa4;color:#5a3d0e;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:14px;font-weight:600;}
+.livr-box small{display:block;font-weight:400;font-size:12px;color:#8a6a30;margin-top:2px;}
 .st{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
 .st-ok{background:#eaf3de;color:#27500a;}
 .st-part{background:#fdf1dc;color:#854f0b;}
@@ -155,7 +158,8 @@ function build(){
   CMDS.forEach(function(x){
     var id=String(x['Commande']||x['N° Commande']||'').trim();if(!id)return;
     var su=String(x['Suivi']||'').trim();if(/termin/i.test(su))return;
-    var o=by[id]||(by[id]={id:id,client:String(x['Client']||'').trim(),lines:[]});
+    var o=by[id]||(by[id]={id:id,client:String(x['Client']||'').trim(),lines:[],livr:''});
+    if(!o.livr)o.livr=String(x['Livraison']||'').trim();
     var ref=String(x['Référence']||'').trim(),qte=num(x['Quantité'])||1;
     var l={ref:ref,qte:qte,prod:String(x['Producteur']||'').trim(),cuvee:String(x['Cuvée']||'').trim(),mill:String(x['Millésime']||'').trim(),fmt:String(x['Format']||'').trim(),fourn:String(x['Fournisseur']||'').trim(),empCol:String(x['Emplacement']||'').trim(),attente:/attente/i.test(su)};
     if(l.attente||!ref){l.etat=l.attente?'attente':'sansref';}
@@ -204,7 +208,17 @@ function card(o){
     :'<span class="st st-wait">Pas encore arrivée</span>';
   var fourn=o.state==='wait'?o.lines.map(function(l){return l.fourn;}).filter(function(v,i,a){return v&&a.indexOf(v)===i;}).slice(0,2).join(', '):'';
   return '<div class="oc '+o.state+'" onclick="openOrder(\''+he(o.id)+'\')"><div class="oc-top"><span class="oc-cli">'+he(o.client||'—')+'</span><span class="oc-bt">'+o.bt+' bt</span></div>'
-    +'<div class="oc-sub">'+he(o.id)+' · '+o.lines.length+' vin'+(o.lines.length>1?'s':'')+(fourn?' · '+he(fourn):'')+'</div>'+st+'</div>';
+    +'<div class="oc-sub">'+he(o.id)+' · '+o.lines.length+' vin'+(o.lines.length>1?'s':'')+(fourn?' · '+he(fourn):'')+'</div>'+st+livrBadge(o)+'</div>';
+}
+
+// Mode de livraison / caisse / notes saisis dans Sur Mesure (colonne « Livraison » du Sheets)
+function livrParts(o){return String(o.livr||'').split(' · ').filter(function(x){return x;});}
+function livrIcon(t){return /exp[ée]dition/i.test(t)?'📦 ':/mains propres/i.test(t)?'🤝 ':/caisse/i.test(t)?'🪵 ':'';}
+function livrBadge(o){var p=livrParts(o).slice(0,2);return p.length?'<span class="livr">'+p.map(function(t){return livrIcon(t)+he(t);}).join(' · ')+'</span>':'';}
+function livrBox(o){
+  var p=livrParts(o);if(!p.length)return '';
+  var main=p.filter(function(t){return livrIcon(t);}),notes=p.filter(function(t){return !livrIcon(t);});
+  return '<div class="livr-box">'+main.map(function(t){return livrIcon(t)+he(t);}).join(' · ')+(notes.length?'<small>📝 '+notes.map(he).join(' · ')+'</small>':'')+'</div>';
 }
 
 /* ── Liste de prélèvement ── */
@@ -218,7 +232,8 @@ function openOrder(id){
   var h='<button class="back" onclick="showList()">← Toutes les commandes</button>'
     +'<div class="hdr" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end"><div><h2>'+he(o.client||'—')+'</h2><p>'+he(o.id)+' · prélevez dans l\'ordre, emplacement par emplacement</p></div>'
     +'<div><div class="hdr-n">'+got+'/'+bt+'</div><div class="hdr-l">bouteilles</div></div></div>'
-    +'<div class="bar"><div style="width:'+(bt?Math.round(got/bt*100):0)+'%"></div></div></div>';
+    +'<div class="bar"><div style="width:'+(bt?Math.round(got/bt*100):0)+'%"></div></div></div>'
+    +livrBox(o);
   var miss=o.lines.length-okL.length;
   if(miss)h+='<div class="note">'+miss+' vin'+(miss>1?'s ne sont':' n\'est')+' pas encore prêt'+(miss>1?'s':'')+' (voir en bas). Préparez le reste, mais ne validez la commande que quand tout est là.</div>';
   o.lines.forEach(function(l,i){
