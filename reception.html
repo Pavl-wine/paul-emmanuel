@@ -4,6 +4,17 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paul Emmanuel — Réception &amp; rangement</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Paul Emmanuel — Réception &amp; rangement">
+<meta property="og:description" content="Arrivage, rangement et commandes de la cave.">
+<meta property="og:url" content="https://pavl-wine.github.io/paul-emmanuel/reception.html">
+<meta property="og:image" content="https://pavl-wine.github.io/paul-emmanuel/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Paul Emmanuel — Réception &amp; rangement">
+<meta name="twitter:description" content="Arrivage, rangement et commandes de la cave.">
+<meta name="twitter:image" content="https://pavl-wine.github.io/paul-emmanuel/preview.png">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:14px;}
@@ -128,6 +139,62 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
   .qin{width:62px;}
   .box{border-radius:12px;}
 }
+
+/* ─── Onglet Commandes ─── */
+.oc{background:white;border:1px solid #e0d8d0;border-left:4px solid #3b6d11;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .12s;}
+.oc:hover{border-color:#c9a84c;}
+.oc.part{border-left-color:#c98a1b;}
+.oc.wait{border-left-color:#c8bfb5;opacity:.75;}
+.oc-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.oc-cli{font-size:16px;font-weight:600;}
+.oc-bt{font-size:15px;font-weight:600;color:#6b2737;white-space:nowrap;}
+.oc-sub{font-size:12px;color:#8a7060;margin-top:3px;}
+.livr{display:inline-block;margin:8px 0 0 6px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:#f3ead6;color:#6b4a12;}
+.livr-box{background:#f3ead6;border:1px solid #e2cfa4;color:#5a3d0e;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:14px;font-weight:600;}
+.livr-box small{display:block;font-weight:400;font-size:12px;color:#8a6a30;margin-top:2px;}
+.st{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+.st-ok{background:#eaf3de;color:#27500a;}
+.st-part{background:#fdf1dc;color:#854f0b;}
+.st-wait{background:#f0ebe3;color:#5a4030;}
+.back{background:none;border:none;color:#6b2737;font-size:14px;font-weight:600;cursor:pointer;padding:4px 0 12px;font-family:inherit;}
+.bar{height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:10px;overflow:hidden;}
+.bar div{height:100%;background:#e8c96a;transition:width .2s;}
+.pr{background:white;border:1px solid #e0d8d0;border-radius:10px;padding:14px;margin-bottom:8px;display:flex;gap:14px;align-items:center;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;}
+.pr.done{background:#f4f9ee;border-color:#b9d79a;}
+.pr.done .pw{text-decoration:line-through;color:#8a7060;}
+.pr.na{cursor:default;background:#faf8f4;border-style:dashed;}
+.chk{width:30px;height:30px;border-radius:50%;border:2px solid #c8bfb5;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0;}
+.pr.done .chk{background:#3b6d11;border-color:#3b6d11;}
+.pr.na .chk{border-style:dashed;}
+.loc{min-width:84px;text-align:center;flex-shrink:0;}
+.loc b{display:block;background:#3d1020;color:#e8c96a;border-radius:6px;padding:6px 8px;font-size:14px;font-weight:700;}
+.loc small{display:block;font-size:10px;color:#8a7060;margin-top:3px;}
+.loc .lna{background:#f0ebe3;color:#854f0b;font-size:11px;font-weight:600;border-radius:6px;padding:6px;}
+.pinfo{flex:1;min-width:0;}
+.pw{font-size:14px;font-weight:600;}
+.pd{font-size:12px;color:#8a7060;margin-top:2px;}
+.pq{font-size:22px;font-weight:600;color:#6b2737;flex-shrink:0;text-align:right;line-height:1;}
+.pq small{display:block;font-size:10px;color:#8a7060;font-weight:400;}
+.note{background:#fdf1dc;color:#854f0b;border-radius:8px;padding:10px 12px;font-size:13px;margin:10px 0;}
+.ph{background:white;border:1px solid #e0d8d0;border-radius:10px;padding:14px;margin-top:16px;}
+.ph h3{font-size:14px;font-weight:600;margin-bottom:4px;}
+.ph p{font-size:12px;color:#8a7060;}
+.ph-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.ph input{display:none;}
+.ph img{max-width:100%;max-height:260px;border-radius:8px;margin-top:10px;display:none;}
+.ai{margin-top:10px;border-radius:8px;padding:10px 12px;font-size:13px;display:none;}
+.ai b{display:block;margin-bottom:3px;}
+.ai.ok{background:#eaf3de;color:#27500a;}
+.ai.ko{background:#fcebeb;color:#791f1f;}
+.ai.wait{background:#f0ebe3;color:#5a4030;}
+.ai ul{margin:6px 0 0 18px;}
+.spin{width:22px;height:22px;border:3px solid #e0d8d0;border-top-color:#6b2737;border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 10px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.cfoot{position:fixed;left:0;right:0;bottom:0;background:white;border-top:1px solid #e0d8d0;padding:12px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;z-index:40;box-shadow:0 -2px 10px rgba(0,0,0,.05);}
+.cfoot.on{display:flex;}
+.cfoot .vbtn{padding:13px 22px;background:#6b2737;color:#e8c96a;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;}
+.cfoot .vbtn:disabled{background:#c8bfb5;color:#8a7060;cursor:not-allowed;}
+.cfoot .vbtn.done{background:#3b6d11;color:white;}
 </style>
 </head>
 <body>
@@ -135,7 +202,7 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
 <div class="sync-bar">
   <div class="sync-dot" id="sync-dot" style="background: rgb(151, 196, 89);"></div>
   <span id="sync-status">Synchronisé — 15:49</span>
-  <button class="refresh-btn" onclick="loadAll()" style="margin-left:auto">Actualiser</button>
+  <button class="refresh-btn" onclick="location.reload()" style="margin-left:auto">Actualiser</button>
 </div>
 
 <nav>
@@ -144,7 +211,7 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
     <div class="tab active" id="t-arrivage" onclick="setView('arrivage')">Arrivage</div>
     <div class="tab" id="t-existant" onclick="setView('existant')">Ranger l'existant</div>
     <div class="tab" id="t-carte" onclick="setView('carte')">Carte de la cave</div>
-    <a class="tab" href="index.html" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes →</a>
+    <div class="tab" id="t-commandes" onclick="setView('commandes')" style="border-left:1px solid rgba(255,255,255,.15);margin-left:6px">Commandes</div>
   </div>
 </nav>
 
@@ -154,6 +221,8 @@ nav{background:#3d1020;display:flex;align-items:center;padding:0 20px;height:52p
   <div id="foot-info" class="muted"><b>0</b> référence · <b>0</b> bt · <span style="color:#27500a;font-weight:600">tout est rangé</span></div>
   <button class="vbtn" id="foot-btn" onclick="valider()" disabled="">Valider la réception</button>
 </div>
+
+<div class="cfoot" id="cfoot"><span id="cfoot-l"></span><button class="vbtn" id="cvbtn" onclick="CO.valider()">Valider la commande</button></div>
 
 <!-- Modale quantité -->
 <div class="ov" id="ov-qty">
@@ -348,8 +417,14 @@ function placedOf(l) { return (l.rangement || []).reduce(function(a, r) { return
 /* ── Navigation ── */
 function setView(v) {
   view = v;
-  ['arrivage', 'existant', 'carte'].forEach(function(x) { document.getElementById('t-' + x).classList.toggle('active', x === v); });
-  render();
+  ['arrivage', 'existant', 'carte', 'commandes'].forEach(function(x) { var el = document.getElementById('t-' + x); if (el) el.classList.toggle('active', x === v); });
+  if (v === 'commandes') {
+    var rf = document.getElementById('foot'); if (rf) rf.style.display = 'none';
+    CO.enter();
+  } else {
+    CO.leave();
+    render();
+  }
 }
 function render() {
   if (view === 'arrivage') renderArrivage();
@@ -388,9 +463,9 @@ function lineIndexByKey(key) { var L = LINES.arrivage; for (var i = 0; i < L.len
 function renderArrivage() {
   var exp = achatsPending();
   var doms = {};
-  exp.forEach(function(e) { doms[e.domaine || '—'] = 1; });
+  exp.forEach(function(e) { doms[(e.domaine || '—').trim()] = 1; });
   var expShown = exp.filter(function(e) {
-    if (fournFilter && (e.domaine || '—') !== fournFilter) return false;
+    if (fournFilter && norm(e.domaine || '—') !== norm(fournFilter)) return false;
     if (expQ && norm(e.domaine + ' ' + e.cuvee + ' ' + e.ref + ' ' + e.fourn + ' ' + e.millesime).indexOf(norm(expQ)) < 0) return false;
     return lineIndexByKey(e.key) < 0;
   }).sort(function(a, b) { return (a.domaine + a.cuvee).localeCompare(b.domaine + b.cuvee); });
@@ -407,7 +482,7 @@ function renderArrivage() {
 
   h += '<div class="sec">À recevoir — onglet Achats (' + exp.length + ')</div>';
   h += '<div class="fbar"><select class="fi" style="max-width:55%" onchange="fournFilter=this.value;renderArrivage()"><option value="">Tous les domaines</option>'
-    + Object.keys(doms).sort().map(function(f) { return '<option' + (f === fournFilter ? ' selected' : '') + '>' + he(f) + '</option>'; }).join('')
+    + Object.keys(doms).sort().map(function(f) { return '<option' + (norm(f) === norm(fournFilter) ? ' selected' : '') + '>' + he(f) + '</option>'; }).join('')
     + '</select><input class="fi" style="flex:1;min-width:120px" placeholder="Rechercher..." value="' + he(expQ) + '" oninput="expQ=this.value;renderArrivage();this.focus();this.setSelectionRange(this.value.length,this.value.length)"></div>';
   if (!expShown.length) h += '<div class="card muted">' + (fournFilter || expQ ? 'Rien pour ce filtre.' : 'Aucun achat en attente de réception. Les nouveaux achats saisis dans l\'onglet Achats apparaîtront ici.') + '</div>';
   expShown.forEach(function(e) {
@@ -765,6 +840,235 @@ function confirmOut() {
       toast('Pas de réponse — vérifiez la carte avant de recommencer', true); loadAll();
     });
 }
+
+
+/* ═══════════ MODULE COMMANDES (isolé) ═══════════ */
+var CO=(function(){
+
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwPQjW-6LUMw5gQdn3K70_dfkGVHT-Mv29SZPNGmD1NZTodTcidPgIDzkzJIqwkkVw/exec';
+var TOKEN = 'PE2026secure';
+var CMDS = [], EMPL = [], ORDERS = [], cur = null, picks = {}, done = {}, photo = null, q = '', showWait = false;
+
+function he(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function num(x){var n=parseFloat(String(x).replace(',','.'));return isNaN(n)?0:n;}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(function(){t.style.display='none';},3000);}
+function sync(m,ok){var s=document.getElementById('sync-status');if(s)s.textContent=m;var d=document.getElementById('sync-dot');if(d)d.style.background=(ok===false?'#e24b4a':'rgb(151,196,89)');}
+
+/* ── Données ── */
+function loadAll(){
+  sync('Lecture du Sheets…');
+  return fetch(SCRIPT_URL+'?action=data').then(function(r){return r.json();}).then(function(d){
+    if(!d.success)throw new Error(d.error||'');
+    CMDS=d.commandes||[];EMPL=d.emplacements||[];
+    build();
+    sync('À jour · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+    if(cur&&ORDERS.some(function(o){return o.id===cur;}))openOrder(cur);else{cur=null;showList();}
+  }).catch(function(){
+    sync('Impossible de lire le Sheets — vérifiez la connexion',false);
+    if(!ORDERS.length)document.getElementById('page').innerHTML='<div class="empty">Pas de connexion au Sheets.<br><br><button class="btn" onclick="CO.loadAll()">Réessayer</button></div>';
+  });
+}
+
+var NIV={'haut':1,'milieu':2,'plan':3,'bas':4,'sol':5};
+function locKey(e){var m=String(e||'').match(/^(\d+)-(\w+)/);if(m)return (+m[1])*10+(NIV[m[2].toLowerCase()]||9);return /r[ée]serve/i.test(e)?900:999;}
+
+// Où prendre les bouteilles : les plus anciennes d'abord (comme le Sheets)
+function lieux(ref,qte){
+  var rows=EMPL.filter(function(e){return e.ref===ref;});
+  rows.sort(function(a,b){return dt(a.date)-dt(b.date);});
+  var out=[],reste=qte;
+  rows.forEach(function(e){if(reste<=0)return;var p=Math.min(e.qte,reste);out.push({emp:e.emp,n:p});reste-=p;});
+  return {out:out,manque:Math.max(0,reste),total:rows.reduce(function(a,e){return a+e.qte;},0)};
+}
+function dt(s){var m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?new Date(+m[3],+m[2]-1,+m[1]).getTime():0;}
+
+function build(){
+  var by={};
+  CMDS.forEach(function(x){
+    var id=String(x['Commande']||x['N° Commande']||'').trim();if(!id)return;
+    var su=String(x['Suivi']||'').trim();if(/termin/i.test(su))return;
+    var o=by[id]||(by[id]={id:id,client:String(x['Client']||'').trim(),lines:[],livr:''});
+    if(!o.livr)o.livr=String(x['Livraison']||'').trim();
+    var ref=String(x['Référence']||'').trim(),qte=num(x['Quantité'])||1;
+    var l={ref:ref,qte:qte,prod:String(x['Producteur']||'').trim(),cuvee:String(x['Cuvée']||'').trim(),mill:String(x['Millésime']||'').trim(),fmt:String(x['Format']||'').trim(),fourn:String(x['Fournisseur']||'').trim(),empCol:String(x['Emplacement']||'').trim(),attente:/attente/i.test(su)};
+    if(l.attente||!ref){l.etat=l.attente?'attente':'sansref';}
+    else{
+      l.where=lieux(ref,qte);
+      if(l.where.out.length&&!l.where.manque)l.etat='ok';
+      else if(l.where.out.length)l.etat='partiel';
+      else l.etat='nonrange';
+    }
+    l.key=l.etat==='ok'||l.etat==='partiel'?locKey(l.where.out[0].emp):1000;
+    o.lines.push(l);
+  });
+  ORDERS=Object.keys(by).map(function(k){
+    var o=by[k];
+    o.lines.sort(function(a,b){return a.key-b.key;});
+    o.bt=o.lines.reduce(function(a,l){return a+l.qte;},0);
+    o.nok=o.lines.filter(function(l){return l.etat==='ok';}).length;
+    o.nwait=o.lines.filter(function(l){return l.etat==='attente';}).length;
+    o.state=o.nok===o.lines.length?'ok':(o.nok===0&&o.nwait===o.lines.length?'wait':'part');
+    return o;
+  }).sort(function(a,b){var r={ok:0,part:1,wait:2};return r[a.state]-r[b.state]||a.id.localeCompare(b.id);});
+}
+
+/* ── Liste des commandes ── */
+function showList(){
+  cur=null;document.getElementById('cfoot').classList.remove('on');
+  var f=function(o){return !q||(o.client+' '+o.id).toLowerCase().indexOf(q)>=0;};
+  var ready=ORDERS.filter(function(o){return o.state!=='wait'&&f(o);});
+  var wait=ORDERS.filter(function(o){return o.state==='wait'&&f(o);});
+  var nReady=ORDERS.filter(function(o){return o.state==='ok';}).length;
+  var h='<div class="hdr"><div><h2>Commandes à préparer</h2><p>Touchez une commande pour ouvrir sa liste de prélèvement</p></div>'
+    +'<div><div class="hdr-n">'+nReady+'</div><div class="hdr-l">prête'+(nReady>1?'s':'')+'</div></div></div>';
+  if(ORDERS.length>6)h+='<input class="fi" type="search" placeholder="Rechercher un client…" value="'+he(q)+'" oninput="CO.setQ(this.value)">';
+  h+='<div class="sec">À préparer</div>';
+  h+=ready.length?ready.map(card).join(''):'<div class="empty">Rien à préparer pour le moment.</div>';
+  if(wait.length){
+    h+='<div class="sec"><span>En attente fournisseur ('+wait.length+')</span><button onclick="CO.toggleWait()">'+(showWait?'masquer':'afficher')+'</button></div>';
+    if(showWait)h+=wait.map(card).join('');
+  }
+  var p=document.getElementById('page');p.innerHTML=h;
+  var inp=p.querySelector('input');if(inp&&q){inp.focus();inp.setSelectionRange(q.length,q.length);}
+}
+function card(o){
+  var st=o.state==='ok'?'<span class="st st-ok">Prête</span>'
+    :o.state==='part'?'<span class="st st-part">'+o.nok+' / '+o.lines.length+' vins prêts</span>'
+    :'<span class="st st-wait">Pas encore arrivée</span>';
+  var fourn=o.state==='wait'?o.lines.map(function(l){return l.fourn;}).filter(function(v,i,a){return v&&a.indexOf(v)===i;}).slice(0,2).join(', '):'';
+  return '<div class="oc '+o.state+'" onclick="CO.openOrder(\''+he(o.id)+'\')"><div class="oc-top"><span class="oc-cli">'+he(o.client||'—')+'</span><span class="oc-bt">'+o.bt+' bt</span></div>'
+    +'<div class="oc-sub">'+he(o.id)+' · '+o.lines.length+' vin'+(o.lines.length>1?'s':'')+(fourn?' · '+he(fourn):'')+'</div>'+st+livrBadge(o)+'</div>';
+}
+
+// Mode de livraison / caisse / notes saisis dans Sur Mesure (colonne « Livraison » du Sheets)
+function livrParts(o){return String(o.livr||'').split(' · ').filter(function(x){return x;});}
+function livrIcon(t){return /exp[ée]dition/i.test(t)?'📦 ':/mains propres/i.test(t)?'🤝 ':/caisse/i.test(t)?'🪵 ':'';}
+function livrBadge(o){var p=livrParts(o).slice(0,2);return p.length?'<span class="livr">'+p.map(function(t){return livrIcon(t)+he(t);}).join(' · ')+'</span>':'';}
+function livrBox(o){
+  var p=livrParts(o);if(!p.length)return '';
+  var main=p.filter(function(t){return livrIcon(t);}),notes=p.filter(function(t){return !livrIcon(t);});
+  return '<div class="livr-box">'+main.map(function(t){return livrIcon(t)+he(t);}).join(' · ')+(notes.length?'<small>📝 '+notes.map(he).join(' · ')+'</small>':'')+'</div>';
+}
+
+/* ── Liste de prélèvement ── */
+function openOrder(id){
+  var o=ORDERS.filter(function(x){return x.id===id;})[0];if(!o)return showList();
+  if(cur!==id){photo=null;}
+  cur=id;if(!picks[id])picks[id]={};
+  var pk=picks[id],okL=o.lines.filter(function(l){return l.etat==='ok';});
+  var bt=okL.reduce(function(a,l){return a+l.qte;},0);
+  var got=o.lines.reduce(function(a,l,i){return a+(pk[i]?l.qte:0);},0);
+  var h='<button class="back" onclick="CO.showList()">← Toutes les commandes</button>'
+    +'<div class="hdr" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end"><div><h2>'+he(o.client||'—')+'</h2><p>'+he(o.id)+' · prélevez dans l\'ordre, emplacement par emplacement</p></div>'
+    +'<div><div class="hdr-n">'+got+'/'+bt+'</div><div class="hdr-l">bouteilles</div></div></div>'
+    +'<div class="bar"><div style="width:'+(bt?Math.round(got/bt*100):0)+'%"></div></div></div>'
+    +livrBox(o);
+  var miss=o.lines.length-okL.length;
+  if(miss)h+='<div class="note">'+miss+' vin'+(miss>1?'s ne sont':' n\'est')+' pas encore prêt'+(miss>1?'s':'')+' (voir en bas). Préparez le reste, mais ne validez la commande que quand tout est là.</div>';
+  o.lines.forEach(function(l,i){
+    var ok=l.etat==='ok',d=pk[i],loc,detail='';
+    if(ok){
+      loc='<b>'+he(l.where.out[0].emp)+'</b>'+(l.where.out.length>1?'<small>puis '+l.where.out.slice(1).map(function(w){return he(w.emp)+' ('+w.n+')';}).join(', ')+'</small>':'');
+      if(l.where.out.length>1)detail=' · '+l.where.out[0].n+' bt en '+he(l.where.out[0].emp);
+    }else{
+      var lab={attente:'Pas encore reçu',sansref:'Prévenir Paul',nonrange:'Pas encore rangé',partiel:'Stock insuffisant'}[l.etat];
+      loc='<div class="lna">'+lab+'</div>';
+      detail={attente:' · en attente'+(l.fourn?' de '+he(l.fourn):' fournisseur'),
+              sansref:' · pas encore relié au stock',
+              nonrange:' · à ranger d\'abord (Réception → Ranger l\'existant)',
+              partiel:' · seulement '+(l.where?l.where.total:0)+' en cave'}[l.etat];
+    }
+    h+='<div class="pr'+(ok?(d?' done':''):' na')+'"'+(ok?' onclick="CO.pick('+i+')"':'')+'>'
+      +'<div class="chk">'+(d?'✓':'')+'</div>'
+      +'<div class="loc">'+loc+'</div>'
+      +'<div class="pinfo"><div class="pw">'+he(l.prod)+(l.cuvee?' — '+he(l.cuvee):'')+'</div><div class="pd">'+he(l.mill||'')+(l.fmt&&l.fmt!=='75cl'?' · '+he(l.fmt):'')+(l.ref?' · '+he(l.ref):'')+detail+'</div></div>'
+      +'<div class="pq">'+l.qte+'<small>bt</small></div></div>';
+  });
+  h+='<div class="ph"><h3>Vérification photo (facultatif)</h3><p>Une photo de la caisse ouverte, étiquettes visibles : l\'IA compare avec la liste.</p>'
+    +'<div class="ph-row"><label class="btn">📷 Prendre la photo<input type="file" accept="image/*" capture="environment" onchange="CO.takePhoto(this)"></label>'
+    +'<button class="btn" id="ai-btn" onclick="CO.checkPhoto()" '+(photo?'':'disabled style="opacity:.5"')+'>Vérifier</button></div>'
+    +'<img id="ph-img"'+(photo?' src="'+photo+'" style="display:block"':'')+'><div class="ai" id="ai"></div></div>';
+  document.getElementById('page').innerHTML=h;
+  var allPicked=okL.length&&o.lines.every(function(l,i){return l.etat!=='ok'||pk[i];});
+  var f=document.getElementById('cfoot'),b=document.getElementById('cvbtn');f.classList.add('on');
+  if(done[id]){b.disabled=true;b.className='vbtn done';b.textContent='✓ Validée';document.getElementById('cfoot-l').textContent='Stock et emplacements mis à jour';}
+  else{
+    b.className='vbtn';b.textContent='Valider la commande';b.disabled=!(allPicked&&!miss);
+    document.getElementById('cfoot-l').textContent=miss?'Commande incomplète':(allPicked?'Tout est prélevé':'Cochez chaque vin prélevé');
+  }
+}
+function pick(i){picks[cur][i]=!picks[cur][i];var y=window.scrollY;openOrder(cur);window.scrollTo(0,y);}
+
+function valider(){
+  var o=ORDERS.filter(function(x){return x.id===cur;})[0];if(!o)return;
+  if(!confirm('Valider la commande de '+o.client+' ?\n\nLes '+o.bt+' bouteilles sortent du stock et de leurs emplacements.'))return;
+  var b=document.getElementById('cvbtn');b.disabled=true;b.textContent='Envoi…';
+  var id=cur;
+  fetch(SCRIPT_URL+'?action=valider_commande&commande='+encodeURIComponent(id)+'&token='+TOKEN)
+    .then(function(r){return r.json();})
+    .then(function(r){
+      if(!r.success)throw new Error(r.error||'');
+      done[id]=true;toast('✓ Commande validée');openOrder(id);
+      setTimeout(function(){delete picks[id];loadAll();},2500);
+    }).catch(function(e){b.disabled=false;b.textContent='Valider la commande';toast('Échec de l\'envoi — réessayez'+(e&&e.message?' ('+e.message+')':''));});
+}
+
+/* ── Photo : réduite dans le téléphone, analysée via le script Google ── */
+function takePhoto(input){
+  var file=input.files&&input.files[0];if(!file)return;
+  var img=new Image(),url=URL.createObjectURL(file);
+  img.onload=function(){
+    var M=1600,w=img.naturalWidth,h=img.naturalHeight,s=Math.min(1,M/Math.max(w,h));
+    var c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    photo=c.toDataURL('image/jpeg',0.82);URL.revokeObjectURL(url);
+    var el=document.getElementById('ph-img');el.src=photo;el.style.display='block';
+    var bt=document.getElementById('ai-btn');bt.disabled=false;bt.style.opacity=1;
+    document.getElementById('ai').style.display='none';
+  };
+  img.onerror=function(){toast('Photo illisible — reprenez-la');};
+  img.src=url;
+}
+function aiBox(cls,html){var a=document.getElementById('ai');a.className='ai '+cls;a.innerHTML=html;a.style.display='block';}
+function checkPhoto(){
+  var o=ORDERS.filter(function(x){return x.id===cur;})[0];if(!o||!photo)return;
+  var att=o.lines.filter(function(l){return l.etat==='ok';}).map(function(l,i){return (i+1)+'. '+l.prod+' '+l.cuvee+(l.mill?' '+l.mill:'')+' ×'+l.qte;}).join('\n');
+  var prompt='Tu es un expert en vins chargé de valider la préparation d\'une caisse. Références attendues :\n'+att
+    +'\n\nAnalyse la photo : pour chaque bouteille visible, lis le nom du vin et le millésime sur l\'étiquette et compare avec la liste.'
+    +' Réponds UNIQUEMENT en JSON : {"ok":true|false,"resume":"une phrase","erreurs":["écarts éventuels"],"bouteilles_vues":N}.'
+    +' Si une étiquette est illisible, indique-le dans les erreurs.';
+  aiBox('wait','<b>Analyse en cours…</b>Lecture des étiquettes, une dizaine de secondes.');
+  fetch(SCRIPT_URL+'?action=verifier_photo&token='+TOKEN,{method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({mediaType:'image/jpeg',imageData:photo.split(',')[1],prompt:prompt})})
+  .then(function(r){return r.json();})
+  .then(function(r){
+    var res=r&&r.result;
+    if(!r.success)throw {msg:r.error||'Erreur du script'};
+    if(res&&res.type==='error'){
+      var t=res.error&&res.error.type;
+      if(t==='authentication_error'||t==='permission_error')throw {msg:'Clé IA refusée — prévenir Paul. La commande peut quand même être validée.'};
+      if(t==='overloaded_error'||t==='rate_limit_error')throw {msg:'Service IA occupé — réessayez dans une minute.'};
+      throw {msg:'Photo non analysée ('+(res.error&&res.error.message||t)+').'};
+    }
+    var txt=(res&&res.content&&res.content[0]&&res.content[0].text)||'';
+    var m=txt.match(/\{[\s\S]*\}/),j=null;try{j=m&&JSON.parse(m[0]);}catch(e){}
+    if(!j){aiBox('wait','<b>Analyse</b>'+he(txt||'Réponse vide — reprenez la photo.'));return;}
+    var errs=(j.erreurs||[]).length?'<ul>'+j.erreurs.map(function(e){return '<li>'+he(e)+'</li>';}).join('')+'</ul>':'';
+    if(j.ok)aiBox('ok','<b>✓ Caisse conforme</b>'+he(j.resume||'')+(j.bouteilles_vues?'<br><small>'+j.bouteilles_vues+' bouteilles vues</small>':''));
+    else aiBox('ko','<b>Écarts détectés</b>'+he(j.resume||'')+errs);
+  })
+  .catch(function(e){aiBox('ko','<b>Vérification impossible</b>'+he(e&&e.msg?e.msg:'Pas de connexion — réessayez.'));});
+}
+
+
+
+function setQ(v){q=String(v).toLowerCase();showList();}
+function toggleWait(){showWait=!showWait;showList();}
+var _active=false,_iv=null;
+function enter(){_active=true;loadAll();if(!_iv)_iv=setInterval(function(){if(_active&&!cur)loadAll();},120000);}
+function leave(){_active=false;var f=document.getElementById('cfoot');if(f)f.classList.remove('on');}
+return {loadAll:loadAll,showList:showList,openOrder:openOrder,pick:pick,valider:valider,takePhoto:takePhoto,checkPhoto:checkPhoto,setQ:setQ,toggleWait:toggleWait,enter:enter,leave:leave};
+})();
 
 loadAll();
 </script>
